@@ -154,10 +154,10 @@ Built for the **Piece of Pie Hackathon by Gimbalabs**
 
 ## 📄 License
 
-MIT License (or specify your preferred license)
+MIT License
 
 ---
 
 ## 🔗 Stay Updated
 
-Follow the build journey and weekly updates on Twitter.
+Follow the build journey and weekly updates on [X](https://x.com/0xGIDHUB).

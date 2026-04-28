@@ -10,8 +10,12 @@ export default function Footer() {
 
           {/* Logo + tagline */}
           <div className="flex flex-col gap-1.5">
-            <Link href="/" className="text-white font-bold text-lg tracking-widest uppercase">
-              TIX<span className="text-[#00e5ff]">ANO</span>
+            <Link href="/">
+              <img
+                src="/Tixano Logo.png"
+                alt="TIXANO"
+                className="h-5 w-auto object-contain"
+              />
             </Link>
             <p className="text-white/30 text-xs tracking-wide">
               NFT ticketing on Cardano

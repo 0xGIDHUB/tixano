@@ -57,8 +57,12 @@ export default function Navbar() {
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="text-white font-bold text-xl tracking-widest uppercase">
-            TIX<span className="text-[#00e5ff]">ANO</span>
+          <Link href="/">
+            <img
+              src="/Tixano Logo.png"
+              alt="TIXANO"
+              className="h-7 w-auto object-contain"
+            />
           </Link>
 
           {/* Nav Links */}

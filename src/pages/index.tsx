@@ -47,7 +47,7 @@ export default function Home() {
       [12, 13, 'h'], [13, 14, 'h'], [14, 15, 'h'],
       [16, 17, 'h'], [17, 18, 'h'], [18, 19, 'h'],
       [0, 4, 'v'], [0, 5, 'v'], [4, 8, 'v'], [8, 12, 'v'], [12, 16, 'v'],
-      [1, 5, 'v'], [5, 8, 'v'], [5, 9, 'v'], [8, 13, 'v'], [9, 13, 'v'], [13, 17, 'v'],
+      [1, 5, 'v'], [5, 8, 'v'], [5, 9, 'v'], [8, 13, 'v'], [9, 13, 'v'], [13, 16, 'v'], [13, 17, 'v'],
       [1, 6, 'v'], [6, 9, 'v'], [6, 10, 'v'], [9, 14, 'v'], [14, 17, 'v'],
       [2, 6, 'v'], [2, 7, 'v'], [7, 10, 'v'], [10, 14, 'v'], [10, 15, 'v'], [14, 18, 'v'], [15, 18, 'v'],
       [3, 7, 'v'], [7, 11, 'v'], [11, 15, 'v'], [15, 19, 'v'],
@@ -191,7 +191,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>TIXANO — Events Built for the Decentralized World</title>
+        <title>TIXANO</title>
       </Head>
 
       <section className="relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden">

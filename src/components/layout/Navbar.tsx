@@ -49,7 +49,7 @@ export default function Navbar() {
           px-6 py-4
           transition-all duration-300
           ${scrolled
-            ? 'bg-black/90 backdrop-blur-md border-b border-white/10'
+            ? 'bg-black/80 backdrop-blur-md border-b border-white/10'
             : 'bg-transparent border-b border-transparent'
           }
         `}

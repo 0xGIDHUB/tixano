@@ -7,6 +7,7 @@ interface ToastState {
   title?: string;
   type?: ToastType;
   duration?: number;
+  txHash?: string;
 }
 
 export function useToast() {
@@ -15,7 +16,7 @@ export function useToast() {
 
   const showToast = useCallback((
     message: string,
-    options?: { title?: string; type?: ToastType; duration?: number }
+    options?: { title?: string; type?: ToastType; duration?: number; txHash?: string;}
   ) => {
     // Clear any existing timer before setting a new toast
     if (timerRef.current) clearTimeout(timerRef.current);

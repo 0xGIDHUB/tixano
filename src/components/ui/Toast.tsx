@@ -7,6 +7,7 @@ interface ToastProps {
   title?: string;
   type?: ToastType;
   duration?: number;
+  txHash?: string;
   onClose: () => void;
 }
 
@@ -29,6 +30,7 @@ export default function Toast({
   title,
   type = 'info',
   duration = 5000,
+  txHash,
   onClose,
 }: ToastProps) {
   const color = colors[type];
@@ -62,6 +64,16 @@ export default function Toast({
             <span className="text-white text-sm font-medium">{title}</span>
           )}
           <span className="text-white/50 text-xs mt-0.5">{message}</span>
+          {txHash && (
+            <a
+              href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#00e5ff] text-xs mt-1 hover:underline"
+            >
+              View on Cardanoscan ↗
+            </a>
+          )}
         </div>
 
         {/* Dismiss */}
@@ -74,7 +86,10 @@ export default function Toast({
       </div>
 
       {/* Progress bar */}
-      <div className="mt-1 h-0.5 rounded-full overflow-hidden" style={{ background: `${color}20` }}>
+      <div
+        className="mt-1 h-0.5 rounded-full overflow-hidden"
+        style={{ background: `${color}20` }}
+      >
         <div
           className="h-full rounded-full"
           style={{

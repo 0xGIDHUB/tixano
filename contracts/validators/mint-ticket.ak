@@ -44,7 +44,7 @@ validator mint_ticket(
                     expect Some(event_price) = get_event_price(event_capacity)
                     let payment_verified = own_output.value == from_lovelace(event_price)
                     
-                    let has_correct_name = asset_name == token_name
+                    let has_correct_name = asset_name == token_name && bytearray.starts_with(asset_name, "TXNE-")
                     let has_correct_value = amount == 1
                     let mint_verified = has_correct_name && has_correct_value
 
@@ -188,7 +188,7 @@ fn mock_tx_attendee(test_case: TestCaseAttendee, token_name: ByteArray) -> Trans
 }
 
 test mint_owner_ticket_success() {
-    let event_uuid = "123e4567-e89b-12d3-a456-426614174000"
+    let event_uuid = "4192baa8-bc64-472a-afd2-7d04dc8c2a6c"
     let event_name = "TestEvent"
     let capacity = 100
 
@@ -217,7 +217,7 @@ test mint_owner_ticket_success() {
 }
 
 test mint_attendee_ticket_success() {
-    let event_uuid = "123e4567-e89b-12d3-a456-426614174000"
+    let event_uuid = "4192baa8-bc64-472a-afd2-7d04dc8c2a6c"
     let event_name = "TestEvent"
 
     let redeemer = MintAttendeeTicket {
@@ -241,9 +241,3 @@ test mint_attendee_ticket_success() {
 }
 
 
-// CONNECTION BETWEEN WALLET ADDRESS AND VERIFICATION KEY HASH (SIGNER HASH)
-// const utxos = await wallet.getUtxos();
-// const walletAddress = (await wallet.getUsedAddresses())[0];
-// const { scriptAddr } = getScript();
-// const signerHash = deserializeAddress(walletAddress).pubKeyHash;
-// type of signerHash is byte array

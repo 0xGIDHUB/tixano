@@ -65,8 +65,8 @@ export default function Home() {
         edgeIndex: pool[Math.floor(Math.random() * pool.length)],
         t: 0,
         speed: 0.003 + Math.random() * 0.001,
-        len: 0.08 + Math.random() * 0.2,
-        rev: Math.random() > 0.2,
+        len: 0.08 + Math.random() * 0.2, 
+        rev: Math.random() > 0.1,
       };
     }
 
@@ -110,7 +110,7 @@ export default function Home() {
         ctx.moveTo(ax, ay);
         ctx.lineTo(bx, by);
         ctx.strokeStyle = C + '0.1)';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.35;
         ctx.stroke();
       });
 
@@ -126,7 +126,7 @@ export default function Home() {
           ctx.fillRect(n.x + 1, n.y + 1, n.w * 0.38, n.h * 0.38);
         } else {
           ctx.strokeStyle = C + '0.5)';
-          ctx.lineWidth = 1.0;
+          ctx.lineWidth = 1.5;
           ctx.strokeRect(n.x, n.y, n.w, n.h);
         }
         ctx.restore();
@@ -208,7 +208,7 @@ export default function Home() {
             </div>
 
             {/* Headline */}
-            <h1 className="font-black text-white leading-[1.05] tracking-tight mb-4 uppercase text-[12vw] sm:text-[9vw] md:text-[7vw] lg:text-[4.5vw] xl:text-[52px]">
+            <h1 className="font-black text-white leading-[1.05] tracking-tight mb-4 sm:text-[9vw] md:text-[7vw] lg:text-[4.5vw] xl:text-[55px]">
               Events Built<br />
               for the<br />
               <span className="text-[#00e5ff]">Decentralized</span><br />

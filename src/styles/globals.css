@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 @keyframes slide-in {
@@ -22,4 +22,13 @@ body {
 
 .animate-drain {
   animation: drain 3s linear forwards;
+}
+
+textarea {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
+}
+
+textarea::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
 }

@@ -75,18 +75,24 @@ export default function Navbar() {
             </Link>
             <ProtectedLink
               href="/events/create"
-              label="Create Event"
+              label="Create Events"
               connected={connected}
-              message="Connect your wallet to create events"
+              message="Connect wallet to create events"
               onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
             />
             <ProtectedLink
               href="/dashboard"
-              label="My Events"
+              label="Dashboard"
               connected={connected}
-              message="Connect your wallet to manage your events"
+              message="Connect wallet to view your dashboard"
               onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
             />
+            <Link
+              href="/about"
+              className="text-white/60 hover:text-[#00e5ff] text-sm tracking-wide transition-colors duration-200"
+            >
+              About
+            </Link>
           </div>
 
           {/* Wallet Connect Button */}

@@ -29,8 +29,11 @@ export default function Footer() {
               <span className="text-white/20 text-[10px] uppercase tracking-[0.15em] font-medium">
                 Platform
               </span>
-              <Link href="/events" className="text-white/50 hover:text-[#00e5ff] text-sm transition-colors duration-200">
-                About Us
+              <Link href="/" className="text-white/50 hover:text-[#00e5ff] text-sm transition-colors duration-200">
+                Home
+              </Link>
+              <Link href="/about" className="text-white/50 hover:text-[#00e5ff] text-sm transition-colors duration-200">
+                About
               </Link>
               <Link href="/events" className="text-white/50 hover:text-[#00e5ff] text-sm transition-colors duration-200">
                 Help
@@ -77,7 +80,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-white/20 text-xs">
-            © {new Date().getFullYear()} TIXANO. All rights reserved.
+            TIXANO - {new Date().getFullYear()}
           </p>
           <div className="flex items-center gap-5">
             <span className="text-white/20 text-xs">

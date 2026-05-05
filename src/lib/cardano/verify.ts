@@ -1,3 +1,5 @@
+import { BLOCKFROST_BASE_URL } from './network';
+
 export async function waitForConfirmation(
   txHash: string,
   maxAttempts = 30,
@@ -7,7 +9,7 @@ export async function waitForConfirmation(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await fetch(
-      `https://cardano-${network}.blockfrost.io/api/v0/txs/${txHash}`,
+      `${BLOCKFROST_BASE_URL}/txs/${txHash}`,
       { headers: { project_id: process.env.NEXT_PUBLIC_BLOCKFROST_KEY! } }
     );
 

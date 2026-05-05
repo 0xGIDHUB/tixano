@@ -6,6 +6,7 @@ import {
   mConStr0,
 } from '@meshsdk/core';
 import { getAppliedScript, getPolicyId } from './policy';
+import { CARDANO_NETWORK } from './network';
 
 
 function splitMetadataString(str: string, maxLen = 64): string | string[] {

@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useWallet, useWalletList } from '@meshsdk/react';
+import { CARDANO_NETWORK, CARDANO_NETWORK_ID } from '@/lib/cardano/network';
+import Toast from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
 
 export default function WalletConnectButton() {
   const { connect, disconnect, connected, connecting } = useWallet();
   const wallets = useWalletList();
   const [showModal, setShowModal] = useState(false);
   const [showDisconnect, setShowDisconnect] = useState(false);
+  const { toast, showToast, closeToast } = useToast();
 
   // Close modal on outside click
   useEffect(() => {
@@ -23,7 +27,29 @@ export default function WalletConnectButton() {
   const handleConnect = async (walletId: string) => {
     try {
       await connect(walletId);
-      localStorage.setItem('tixano_wallet', walletId); // ← add this
+
+      // Check network after connecting
+      const walletApi = await (window as any).cardano[walletId].enable();
+      const networkId = await walletApi.getNetworkId();
+
+      if (networkId !== CARDANO_NETWORK_ID) {
+        // Wrong network — disconnect and warn
+        disconnect();
+        setShowModal(false);
+        disconnect();
+        setShowModal(false);
+        showToast(
+          `Please switch your wallet to Cardano ${CARDANO_NETWORK.charAt(0).toUpperCase() + CARDANO_NETWORK.slice(1)} and try again.`,
+          {
+            title: 'Wrong Network',
+            type: 'error',
+            duration: 6000,
+          }
+        );
+        return;
+        return;
+      }
+
       setShowModal(false);
     } catch (err) {
       console.error('Wallet connection failed:', err);
@@ -124,6 +150,16 @@ export default function WalletConnectButton() {
           </div>
         </div>
       )}
+      {toast && (
+  <Toast
+    key={toast.id}
+    message={toast.message}
+    title={toast.title}
+    type={toast.type}
+    duration={toast.duration}
+    onClose={closeToast}
+  />
+)}
     </>
   );
 }

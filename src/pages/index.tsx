@@ -191,7 +191,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>TIXANO</title>
+        <title>Tixano</title>
       </Head>
 
       <section className="relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden">
@@ -208,7 +208,7 @@ export default function Home() {
             </div>
 
             {/* Headline */}
-            <h1 className="font-black text-white leading-[1.05] tracking-tight mb-4 sm:text-[9vw] md:text-[7vw] lg:text-[4.5vw] xl:text-[55px]">
+            <h1 className="font-black text-white leading-[1.05] tracking-tight mb-4 uppercase text-[12vw] sm:text-[9vw] md:text-[7vw] lg:text-[4.5vw] xl:text-[53px]">
               Events Built<br />
               for the<br />
               <span className="text-[#00e5ff]">Decentralized</span><br />

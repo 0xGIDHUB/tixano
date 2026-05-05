@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { CARDANOSCAN_BASE_URL } from '@/lib/cardano/network';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
 
@@ -66,7 +67,7 @@ export default function Toast({
           <span className="text-white/50 text-xs mt-0.5">{message}</span>
           {txHash && (
             <a
-              href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
+              href={`${CARDANOSCAN_BASE_URL}/transaction/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#00e5ff] text-xs mt-1 hover:underline"

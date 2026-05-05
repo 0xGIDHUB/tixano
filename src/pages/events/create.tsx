@@ -275,7 +275,7 @@ export default function CreateEvent() {
     return (
         <>
             <Head>
-                <title>Create Event — TIXANO</title>
+                <title>Create Event — Tixano</title>
             </Head>
 
             <div className="min-h-screen bg-black px-6 py-12">
@@ -924,7 +924,7 @@ export default function CreateEvent() {
 
                         <p className="text-white/40 text-sm leading-relaxed mb-6">
                             {processingStep === 'signing' &&
-                                'Please check sign the transaction in your wallet to proceed.'}
+                                'Please sign the transaction in your wallet to proceed.'}
                             {processingStep === 'confirming' &&
                                 'Your transaction has been submitted and is being confirmed on the Cardano blockchain. This may take 30–60 seconds. Please do not close or refresh this page.'}
                             {processingStep === 'uploading' &&

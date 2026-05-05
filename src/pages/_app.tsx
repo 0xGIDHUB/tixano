@@ -16,17 +16,16 @@ function AutoReconnect() {
   const { connect, connected } = useWallet();
 
   useEffect(() => {
-    if (connected) return; // already connected, skip
+    if (connected) return;
     const savedWallet = localStorage.getItem('tixano_wallet');
     if (savedWallet) {
       connect(savedWallet).catch(() => {
-        // Wallet extension may not be available, clear the saved id
         localStorage.removeItem('tixano_wallet');
       });
     }
   }, []);
 
-  return null; // renders nothing, just handles reconnection
+  return null;
 }
 
 export default function App({ Component, pageProps }: CustomAppProps) {

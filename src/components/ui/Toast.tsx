@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { CARDANOSCAN_BASE_URL } from '@/lib/cardano/network';
+import { createPortal } from 'react-dom';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
 
@@ -13,7 +13,7 @@ interface ToastProps {
 }
 
 const icons: Record<ToastType, string> = {
-  info:    '!',
+  info:    '⚠',
   success: '✓',
   error:   '✕',
   warning: '⚠',
@@ -41,13 +41,12 @@ export default function Toast({
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50 animate-slide-in">
+  const toastContent = (
+    <div className="fixed bottom-6 right-6 z-[9999] animate-slide-in">
       <div
         className="flex items-center gap-3 bg-[#111] rounded-xl px-5 py-4 shadow-2xl shadow-black/50 min-w-[300px]"
         style={{ border: `1px solid ${color}30` }}
       >
-        {/* Icon */}
         <div
           className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
           style={{
@@ -59,7 +58,6 @@ export default function Toast({
           {icons[type]}
         </div>
 
-        {/* Text */}
         <div className="flex flex-col">
           {title && (
             <span className="text-white text-sm font-medium">{title}</span>
@@ -67,7 +65,7 @@ export default function Toast({
           <span className="text-white/50 text-xs mt-0.5">{message}</span>
           {txHash && (
             <a
-              href={`${CARDANOSCAN_BASE_URL}/transaction/${txHash}`}
+              href={`${process.env.NEXT_PUBLIC_CARDANOSCAN_URL}/transaction/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#00e5ff] text-xs mt-1 hover:underline"
@@ -77,7 +75,6 @@ export default function Toast({
           )}
         </div>
 
-        {/* Dismiss */}
         <button
           onClick={onClose}
           className="ml-auto flex-shrink-0 text-white/30 hover:text-white/70 transition-colors text-lg leading-none"
@@ -86,7 +83,6 @@ export default function Toast({
         </button>
       </div>
 
-      {/* Progress bar */}
       <div
         className="mt-1 h-0.5 rounded-full overflow-hidden"
         style={{ background: `${color}20` }}
@@ -101,4 +97,8 @@ export default function Toast({
       </div>
     </div>
   );
+
+  // Render directly into document.body — bypasses all parent stacking contexts
+  if (typeof window === 'undefined') return null;
+  return createPortal(toastContent, document.body);
 }

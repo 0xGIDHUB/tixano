@@ -28,29 +28,23 @@ export default function WalletConnectButton() {
     try {
       await connect(walletId);
 
-      // Check network after connecting
       const walletApi = await (window as any).cardano[walletId].enable();
       const networkId = await walletApi.getNetworkId();
 
       if (networkId !== CARDANO_NETWORK_ID) {
-        // Wrong network — disconnect and warn
         disconnect();
         setShowModal(false);
-        disconnect();
-        setShowModal(false);
+        localStorage.removeItem('tixano_wallet');
         showToast(
           `Please switch your wallet to Cardano ${CARDANO_NETWORK.charAt(0).toUpperCase() + CARDANO_NETWORK.slice(1)} and try again.`,
-          {
-            title: 'Wrong Network',
-            type: 'error',
-            duration: 6000,
-          }
+          { title: 'Wrong Network', type: 'error', duration: 6000 }
         );
-        return;
         return;
       }
 
+      localStorage.setItem('tixano_wallet', walletId);
       setShowModal(false);
+
     } catch (err) {
       console.error('Wallet connection failed:', err);
     }
@@ -73,7 +67,7 @@ export default function WalletConnectButton() {
             <button
               onClick={() => {
                 disconnect();
-                localStorage.removeItem('tixano_wallet'); // ← add this
+                localStorage.removeItem('tixano_wallet');
                 setShowDisconnect(false);
               }}
               className="w-full text-center px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
@@ -89,7 +83,6 @@ export default function WalletConnectButton() {
   // Not connected state
   return (
     <>
-      {/* Trigger Button */}
       <button
         onClick={() => setShowModal(true)}
         disabled={connecting}
@@ -98,16 +91,12 @@ export default function WalletConnectButton() {
         {connecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
 
-      {/* Modal Overlay */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-
-          {/* Modal Box */}
           <div
             id="wallet-modal"
             className="relative w-[360px] bg-[#111] border border-white/10 rounded-2xl shadow-2xl p-6"
           >
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-semibold text-lg tracking-wide">
                 Connect Wallet
@@ -120,7 +109,6 @@ export default function WalletConnectButton() {
               </button>
             </div>
 
-            {/* Wallet Grid */}
             {wallets.length === 0 ? (
               <p className="text-center text-white/40 text-sm py-6">
                 No wallets detected. <br />
@@ -130,15 +118,11 @@ export default function WalletConnectButton() {
               <div className="grid grid-cols-3 gap-4">
                 {wallets.map((w) => (
                   <button
-                    key={w.id} // use id as key
-                    onClick={() => handleConnect(w.id)}  // pass id to connect
+                    key={w.id}
+                    onClick={() => handleConnect(w.id)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl border border-white/10 hover:border-[#00e5ff]/50 hover:bg-white/5 transition-all duration-200 group"
                   >
-                    <img
-                      src={w.icon}
-                      alt={w.name}
-                      className="w-12 h-12 rounded-xl"
-                    />
+                    <img src={w.icon} alt={w.name} className="w-12 h-12 rounded-xl" />
                     <span className="text-white/60 group-hover:text-white text-xs text-center transition-colors">
                       {w.name}
                     </span>
@@ -146,20 +130,21 @@ export default function WalletConnectButton() {
                 ))}
               </div>
             )}
-
           </div>
         </div>
       )}
+
+      {/* Toast renders via portal — always fixed to viewport */}
       {toast && (
-  <Toast
-    key={toast.id}
-    message={toast.message}
-    title={toast.title}
-    type={toast.type}
-    duration={toast.duration}
-    onClose={closeToast}
-  />
-)}
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          title={toast.title}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={closeToast}
+        />
+      )}
     </>
   );
 }

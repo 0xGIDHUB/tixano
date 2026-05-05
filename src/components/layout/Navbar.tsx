@@ -1,9 +1,28 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import WalletConnectButton from '@/components/wallet/WalletConnectButton';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  const { pathname } = useRouter();
+  const isActive = pathname === href;  // ← exact match only
+
+  return (
+    <Link
+      href={href}
+      className={`text-sm tracking-wide transition-colors duration-200
+        ${isActive
+          ? 'text-[#00e5ff] font-semibold'
+          : 'text-white/60 hover:text-[#00e5ff]'
+        }`}
+    >
+      {label}
+    </Link>
+  );
+}
 
 function ProtectedLink({ href, label, connected, message, onBlock }: {
   href: string;
@@ -12,6 +31,9 @@ function ProtectedLink({ href, label, connected, message, onBlock }: {
   message: string;
   onBlock: (message: string) => void;
 }) {
+  const { pathname } = useRouter();
+  const isActive = pathname === href;  // ← exact match only
+
   const handleClick = (e: React.MouseEvent) => {
     if (!connected) {
       e.preventDefault();
@@ -23,7 +45,11 @@ function ProtectedLink({ href, label, connected, message, onBlock }: {
     <Link
       href={href}
       onClick={handleClick}
-      className="text-white/60 hover:text-[#00e5ff] text-sm tracking-wide transition-colors duration-200"
+      className={`text-sm tracking-wide transition-colors duration-200
+        ${isActive
+          ? 'text-[#00e5ff] font-semibold'
+          : 'text-white/60 hover:text-[#00e5ff]'
+        }`}
     >
       {label}
     </Link>
@@ -67,12 +93,7 @@ export default function Navbar() {
 
           {/* Nav Links */}
           <div className="hidden md:flex items-center gap-8">
-            <Link
-              href="/events"
-              className="text-white/60 hover:text-[#00e5ff] text-sm tracking-wide transition-colors duration-200"
-            >
-              Explore Events
-            </Link>
+            <NavLink href="/events" label="Explore Events" />
             <ProtectedLink
               href="/events/create"
               label="Create Events"
@@ -87,12 +108,7 @@ export default function Navbar() {
               message="Connect wallet to view your dashboard"
               onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
             />
-            <Link
-              href="/about"
-              className="text-white/60 hover:text-[#00e5ff] text-sm tracking-wide transition-colors duration-200"
-            >
-              About
-            </Link>
+            <NavLink href="/about" label="About" />
           </div>
 
           {/* Wallet Connect Button */}

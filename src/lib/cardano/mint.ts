@@ -6,7 +6,6 @@ import {
   mConStr0,
 } from '@meshsdk/core';
 import { getAppliedScript, getPolicyId } from './policy';
-import { CARDANO_NETWORK } from './network';
 
 
 function splitMetadataString(str: string, maxLen = 64): string | string[] {
@@ -40,6 +39,7 @@ export async function buildMintOwnerTicketTx({
   eventUuid,
   eventName,
   eventTitle,
+  eventDate,
   eventCapacity,
   nftImageUri,
 }: {
@@ -47,6 +47,7 @@ export async function buildMintOwnerTicketTx({
   eventUuid: string;
   eventName: string;
   eventTitle: string;
+  eventDate: string;
   eventCapacity: number;
   nftImageUri: string;
 }): Promise<{ txHash: string; policyId: string }> {
@@ -94,6 +95,7 @@ export async function buildMintOwnerTicketTx({
           description: eventTitle,
           type: 'EventOwnerTicket',
           event_id: eventUuid,
+          event_date: eventDate,
           event_capacity: eventCapacity,
           platform: 'Tixano',
           website: 'tixano link here',

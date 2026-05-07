@@ -26,6 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     registrationDeadline,
     coverImageUrl,
     bannerImageUrl,
+    organizerName,
+    organizerLink,
   } = req.body;
 
   // Add to validation
@@ -54,6 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       registration_deadline: registrationDeadline || null,
       cover_image_url: coverImageUrl || null,
       banner_image_url: bannerImageUrl || null,
+      organizer_name: organizerName || 'Anonymous',
+      organizer_link: organizerLink || null,
     })
     .select()
     .single();

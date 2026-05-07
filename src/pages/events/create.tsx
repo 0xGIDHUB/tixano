@@ -66,6 +66,8 @@ interface FormData {
     registrationDeadline: string;
     image: File | null;
     bannerImage: File | null;
+    organizerName: string;
+    organizerLink: string;
 }
 
 export default function CreateEvent() {
@@ -130,6 +132,8 @@ export default function CreateEvent() {
         registrationDeadline: '',
         image: null,
         bannerImage: null,
+        organizerName: '',
+        organizerLink: '',
     });
 
     const handleImageChange = (file: File) => {
@@ -199,6 +203,7 @@ export default function CreateEvent() {
                 eventUuid,
                 eventName: form.eventAlias,
                 eventTitle: form.title,
+                eventDate: form.date,
                 eventCapacity: parseInt(form.capacity),
                 nftImageUri,
             });
@@ -238,6 +243,8 @@ export default function CreateEvent() {
                     registrationDeadline: form.registrationDeadline,
                     coverImageUrl,
                     bannerImageUrl,
+                    organizerName: form.organizerName || 'Anonymous',
+                    organizerLink: form.organizerLink || null,
                 }),
             });
 
@@ -283,7 +290,7 @@ export default function CreateEvent() {
 
                     {/* Page Header */}
                     <div className="mb-10">
-                        <h1 className="text-white text-3xl font-black uppercase tracking-tight">
+                        <h1 className="text-white/90 text-3xl font-black uppercase tracking-tight">
                             Create Your Event
                         </h1>
                     </div>
@@ -399,6 +406,32 @@ export default function CreateEvent() {
                                     />
                                 </div>
 
+                                {/* Organiser Info */}
+                                <div className="pt-2">
+                                    <label className={labelClass}>
+                                        Organiser Info
+                                        <span className="text-white/20 text-[10px] ml-2 normal-case tracking-normal font-normal">
+                                            optional
+                                        </span>
+                                    </label>
+                                    <div className="flex flex-col gap-3">
+                                        <input
+                                            name="organizerName"
+                                            value={form.organizerName}
+                                            onChange={handleChange}
+                                            placeholder="Your name or organisation (default: Anonymous)"
+                                            className={inputClass}
+                                        />
+                                        <input
+                                            name="organizerLink"
+                                            value={form.organizerLink}
+                                            onChange={handleChange}
+                                            placeholder="Link to your profile, website or social"
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                </div>
+
                                 {/* Date + Registration Deadline */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -407,9 +440,9 @@ export default function CreateEvent() {
                                             type="date"
                                             name="date"
                                             value={form.date}
+                                            min={new Date().toISOString().split('T')[0]}  // ← add this
                                             onChange={(e) => {
                                                 const selectedDate = e.target.value;
-                                                // Auto-fill deadline to one day before event date
                                                 const eventDate = new Date(selectedDate);
                                                 eventDate.setDate(eventDate.getDate() - 1);
                                                 const deadlineValue = eventDate.toISOString().split('T')[0];

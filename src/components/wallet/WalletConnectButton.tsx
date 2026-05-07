@@ -3,6 +3,7 @@ import { useWallet, useWalletList } from '@meshsdk/react';
 import { CARDANO_NETWORK, CARDANO_NETWORK_ID } from '@/lib/cardano/network';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import { createPortal } from 'react-dom';
 
 export default function WalletConnectButton() {
   const { connect, disconnect, connected, connecting } = useWallet();
@@ -91,7 +92,7 @@ export default function WalletConnectButton() {
         {connecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
 
-      {showModal && (
+      {showModal && typeof window !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div
             id="wallet-modal"
@@ -131,7 +132,8 @@ export default function WalletConnectButton() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Toast renders via portal — always fixed to viewport */}

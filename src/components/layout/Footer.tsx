@@ -59,7 +59,9 @@ export default function Footer() {
                   aria-label="Twitter"
                   className="text-white/50 hover:text-[#00e5ff] transition-colors duration-200"
                 >
-                  <FaTwitter size={18} />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.89 1.5H22.5L14.51 10.35L24 22.5H16.62L10.88 15.73L4.12 22.5H0.51L8.91 13.27L0 1.5H7.59L12.89 7.76L18.89 1.5ZM17.05 20.68H19.39L6.31 3.77H3.8L17.05 20.68Z" />
+                  </svg>
                 </a>
                 <a
                   href="https://discord.gg/tixano"

@@ -111,10 +111,69 @@ export default function WalletConnectButton() {
             </div>
 
             {wallets.length === 0 ? (
-              <p className="text-center text-white/40 text-sm py-6">
-                No wallets detected. <br />
-                Please install a Cardano wallet extension.
-              </p>
+              <div className="flex flex-col items-center gap-4 py-2">
+                <p className="text-center text-white/40 text-sm">
+                  No wallets detected. <br />
+                  Please install a Cardano wallet extension.
+                </p>
+
+                <div className="w-full flex flex-col gap-2">
+
+                  {[
+                    {
+                      name: 'Eternl',
+                      url: 'https://chromewebstore.google.com/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka',
+                      color: '#4B9FE1',
+                    },
+                    {
+                      name: 'Vespr',
+                      url: 'https://chromewebstore.google.com/detail/vespr-wallet/bedogdpgdnifilpgeianmmdabklhfkcn',
+                      color: '#9B6DFF',
+                    },
+                    {
+                      name: 'Lace',
+                      url: 'https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk',
+                      color: '#6B56F5',
+                    },
+                    {
+                      name: 'Yoroi',
+                      url: 'https://chromewebstore.google.com/detail/yoroi/ffnbelfdoeiohenkjibnmadjiehjhajb',
+                      color: '#F97316',
+                    },
+                  ].map((w) => (
+                    <a
+                      key={w.name}
+                      href={w.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-white/15 transition-all duration-150 group"
+                    >
+                      <span className="text-white/60 group-hover:text-white text-sm font-medium transition-colors">
+                        {w.name}
+                      </span>
+
+                      <div className="flex items-center gap-1.5 text-white/20 group-hover:text-white/50 transition-colors">
+                        <span className="text-[11px]">Install</span>
+
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                        >
+                          <path
+                            d="M3 13L13 3M13 3H7M13 3v6"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
                 {wallets.map((w) => (

@@ -6,6 +6,8 @@ import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import { buildMintAttendeeTicketTx } from '@/lib/cardano/mint';
+import { waitForConfirmation } from '@/lib/cardano/verify';
 
 interface Event {
     id: string;
@@ -70,101 +72,101 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 }
 
 function SkeletonEventDetail() {
-  return (
-    <div className="min-h-screen bg-black animate-pulse">
+    return (
+        <div className="min-h-screen bg-black animate-pulse">
 
-      {/* Banner skeleton */}
-      <div className="w-full h-[280px] sm:h-[340px] bg-white/5" />
+            {/* Banner skeleton */}
+            <div className="w-full h-[280px] sm:h-[340px] bg-white/5" />
 
-      {/* Cover + title overlap */}
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="relative -mt-16 flex flex-col sm:flex-row items-start sm:items-end gap-5 pb-6">
-          <div className="flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-white/10" />
-          <div className="flex-1 pb-1 flex flex-col gap-3">
-            <div className="h-4 w-20 bg-white/10 rounded-full" />
-            <div className="h-8 w-2/3 bg-white/10 rounded-lg" />
-            <div className="h-6 w-1/3 bg-white/5 rounded-lg" />
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
-
-          {/* Left */}
-          <div className="flex-1 min-w-0 flex flex-col gap-8">
-            <div className="h-3 w-24 bg-white/5 rounded" />
-
-            {/* About block */}
-            <div className="flex flex-col gap-3">
-              <div className="h-3 w-32 bg-white/10 rounded" />
-              <div className="h-px bg-white/5" />
-              <div className="h-3 w-full bg-white/5 rounded" />
-              <div className="h-3 w-5/6 bg-white/5 rounded" />
-              <div className="h-3 w-4/6 bg-white/5 rounded" />
-            </div>
-
-            {/* Details block */}
-            <div className="flex flex-col gap-3">
-              <div className="h-3 w-28 bg-white/10 rounded" />
-              <div className="bg-white/5 rounded-2xl px-4 py-3 flex flex-col gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex-shrink-0" />
-                    <div className="flex flex-col gap-1.5 flex-1">
-                      <div className="h-2 w-16 bg-white/5 rounded" />
-                      <div className="h-3 w-40 bg-white/8 rounded" />
+            {/* Cover + title overlap */}
+            <div className="max-w-6xl mx-auto px-6">
+                <div className="relative -mt-16 flex flex-col sm:flex-row items-start sm:items-end gap-5 pb-6">
+                    <div className="flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-white/10" />
+                    <div className="flex-1 pb-1 flex flex-col gap-3">
+                        <div className="h-4 w-20 bg-white/10 rounded-full" />
+                        <div className="h-8 w-2/3 bg-white/10 rounded-lg" />
+                        <div className="h-6 w-1/3 bg-white/5 rounded-lg" />
                     </div>
-                  </div>
-                ))}
-              </div>
+                </div>
             </div>
 
-            {/* Organiser block */}
-            <div className="flex flex-col gap-3">
-              <div className="h-3 w-24 bg-white/10 rounded" />
-              <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-white/10 flex-shrink-0" />
-                <div className="flex flex-col gap-2 flex-1">
-                  <div className="h-2 w-16 bg-white/5 rounded" />
-                  <div className="h-3 w-32 bg-white/8 rounded" />
-                  <div className="h-2 w-48 bg-white/5 rounded" />
+            {/* Body */}
+            <div className="max-w-6xl mx-auto px-6 pb-20">
+                <div className="flex flex-col lg:flex-row gap-10 items-start">
+
+                    {/* Left */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-8">
+                        <div className="h-3 w-24 bg-white/5 rounded" />
+
+                        {/* About block */}
+                        <div className="flex flex-col gap-3">
+                            <div className="h-3 w-32 bg-white/10 rounded" />
+                            <div className="h-px bg-white/5" />
+                            <div className="h-3 w-full bg-white/5 rounded" />
+                            <div className="h-3 w-5/6 bg-white/5 rounded" />
+                            <div className="h-3 w-4/6 bg-white/5 rounded" />
+                        </div>
+
+                        {/* Details block */}
+                        <div className="flex flex-col gap-3">
+                            <div className="h-3 w-28 bg-white/10 rounded" />
+                            <div className="bg-white/5 rounded-2xl px-4 py-3 flex flex-col gap-4">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex-shrink-0" />
+                                        <div className="flex flex-col gap-1.5 flex-1">
+                                            <div className="h-2 w-16 bg-white/5 rounded" />
+                                            <div className="h-3 w-40 bg-white/8 rounded" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Organiser block */}
+                        <div className="flex flex-col gap-3">
+                            <div className="h-3 w-24 bg-white/10 rounded" />
+                            <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white/10 flex-shrink-0" />
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <div className="h-2 w-16 bg-white/5 rounded" />
+                                    <div className="h-3 w-32 bg-white/8 rounded" />
+                                    <div className="h-2 w-48 bg-white/5 rounded" />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Right — registration card */}
+                    <div className="w-full lg:w-[320px] flex-shrink-0">
+                        <div className="bg-white/5 rounded-2xl p-5 flex flex-col gap-4">
+                            <div className="flex items-center justify-between pb-5 border-b border-white/5">
+                                <div className="flex flex-col gap-2">
+                                    <div className="h-2 w-16 bg-white/5 rounded" />
+                                    <div className="h-7 w-20 bg-white/10 rounded" />
+                                </div>
+                                <div className="flex flex-col gap-2 items-end">
+                                    <div className="h-2 w-16 bg-white/5 rounded" />
+                                    <div className="h-7 w-12 bg-white/10 rounded" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="flex items-center justify-between">
+                                        <div className="h-2.5 w-20 bg-white/5 rounded" />
+                                        <div className="h-2.5 w-32 bg-white/8 rounded" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="h-12 w-full bg-white/10 rounded-xl mt-2" />
+                        </div>
+                    </div>
+
                 </div>
-              </div>
             </div>
-
-          </div>
-
-          {/* Right — registration card */}
-          <div className="w-full lg:w-[320px] flex-shrink-0">
-            <div className="bg-white/5 rounded-2xl p-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-5 border-b border-white/5">
-                <div className="flex flex-col gap-2">
-                  <div className="h-2 w-16 bg-white/5 rounded" />
-                  <div className="h-7 w-20 bg-white/10 rounded" />
-                </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <div className="h-2 w-16 bg-white/5 rounded" />
-                  <div className="h-7 w-12 bg-white/10 rounded" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="h-2.5 w-20 bg-white/5 rounded" />
-                    <div className="h-2.5 w-32 bg-white/8 rounded" />
-                  </div>
-                ))}
-              </div>
-              <div className="h-12 w-full bg-white/10 rounded-xl mt-2" />
-            </div>
-          </div>
-
         </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default function EventDetail() {
@@ -180,6 +182,7 @@ export default function EventDetail() {
     const [regForm, setRegForm] = useState<RegistrationForm>({
         fullName: '', email: '', phone: '', expectation: '',
     });
+    const [processingStep, setProcessingStep] = useState<'signing' | 'confirming' | 'saving' | null>(null);
 
     useEffect(() => {
         if (!eventId) return;
@@ -224,17 +227,116 @@ export default function EventDetail() {
             });
             return;
         }
-        setRegistering(true);
-        // Registration logic will go here
-        setTimeout(() => {
-            setRegistering(false);
-            setShowRegModal(false);
-            showToast('Your registration has been submitted successfully.', {
-                title: 'Registered!',
-                type: 'success',
-                duration: 6000,
+
+        if (!event) {
+            showToast('Event data could not be loaded. Please try again.', {
+                title: 'Error',
+                type: 'error',
+                duration: 4000,
             });
-        }, 1500);
+            return;
+        }
+
+        setRegistering(true);
+        setShowRegModal(false);
+
+        try {
+            // 1. Generate ticket UUID
+            const ticketUuid = crypto.randomUUID();
+
+            // 2. Determine registration number (next after current total)
+            const registrationNumber = (event.total_registrations ?? 0) + 1;
+
+            // 3. Mint attendee NFT on-chain
+            setProcessingStep('signing');
+            const { txHash, policyId, assetName } = await buildMintAttendeeTicketTx({
+                wallet,
+                eventUuid: event.id,
+                eventAlias: event.event_alias,
+                eventTitle: event.title,
+                eventDate: event.date ?? '',
+                eventPricing: event.pricing as 'free' | 'paid',
+                ticketUuid,
+                ticketOwnerName: regForm.fullName,
+                registrationNumber,
+                nftImageUri: '',  // ← leave blank for now
+            });
+
+            // 4. Wait for on-chain confirmation
+            setProcessingStep('confirming');
+            await waitForConfirmation(txHash);
+
+            // 5. Save ticket to database
+            setProcessingStep('saving');
+            const attendeeAddress = await wallet.getChangeAddress();
+
+            const ticketRes = await fetch('/api/tickets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ticketId: ticketUuid,
+                    eventId: event.id,
+                    policyId,
+                    assetName,
+                    txHash,
+                    ownerWallet: attendeeAddress,
+                    ownerName: regForm.fullName,
+                    ownerEmail: regForm.email,
+                    ownerPhone: regForm.phone || null,
+                    ownerExpectation: regForm.expectation || null,
+                    nftImageUrl: null,
+                }),
+            });
+
+            if (!ticketRes.ok) {
+                const err = await ticketRes.json();
+                throw new Error(err.error || 'Failed to save ticket');
+            }
+
+            // 6. Send confirmation email
+            await fetch('/api/tickets/send-confirmation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ownerEmail: regForm.email,
+                    ownerName: regForm.fullName,
+                    eventTitle: event.title,
+                    eventDate: event.date ?? 'TBA',
+                    ticketId: ticketUuid,
+                    txHash,
+                    assetName,
+                }),
+            });
+
+            // 7. Done
+            setRegistering(false);
+            setProcessingStep(null);
+
+            showToast('Your NFT ticket has been minted successfully.', {
+                title: 'Registration Complete',
+                type: 'success',
+                duration: 12000,
+                txHash,
+            });
+
+            // Refresh event data to update registration count
+            const { data } = await supabase
+                .from('events')
+                .select('total_registrations')
+                .eq('id', event.id)
+                .single();
+            if (data) setEvent(prev => prev ? { ...prev, total_registrations: data.total_registrations } : prev);
+
+        } catch (err: any) {
+            console.error(err);
+            setRegistering(false);
+            setProcessingStep(null);
+            showToast(err.message || 'Registration failed. Please try again.', {
+                title: 'Error',
+                type: 'error',
+                duration: 8000,
+            });
+        }
     }
 
     const mapsUrl = event?.address
@@ -447,7 +549,7 @@ export default function EventDetail() {
                                                 <a href={event.organizer_link}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#00e5ff] text- font-bold hover:underline truncate"
+                                                    className="text-[#00e5ff] text-sm font-bold hover:underline truncate"
                                                 >
                                                     {event.organizer_name || 'Anonymous'}
                                                 </a>
@@ -607,6 +709,43 @@ export default function EventDetail() {
                 </div>
             </div >
 
+            {/* Processing Modal */}
+            {registering && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4">
+                    <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl text-center">
+
+                        <div className="w-16 h-16 rounded-full border-2 border-white/5 border-t-[#00e5ff] animate-spin mx-auto mb-6" />
+
+                        <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
+                            {processingStep === 'signing' && 'Waiting for Signature'}
+                            {processingStep === 'confirming' && 'Confirming Transaction'}
+                            {processingStep === 'saving' && 'Almost Done'}
+                            {!processingStep && 'Processing...'}
+                        </h2>
+
+                        <p className="text-white/40 text-sm leading-relaxed mb-6">
+                            {processingStep === 'signing' &&
+                                'Please check your wallet and sign the transaction to mint your NFT ticket.'}
+                            {processingStep === 'confirming' &&
+                                'Your transaction has been submitted. Waiting for confirmation on the Cardano blockchain. This may take 30–60 seconds.'}
+                            {processingStep === 'saving' &&
+                                'Transaction confirmed. Saving your ticket details...'}
+                            {!processingStep && 'Please wait...'}
+                        </p>
+
+                        {processingStep === 'confirming' && (
+                            <div className="flex items-center gap-2 bg-[#ffaa00]/10 border border-[#ffaa00]/20 rounded-lg px-4 py-3">
+                                <span className="text-[#ffaa00] text-lg flex-shrink-0">⚠</span>
+                                <p className="text-[#ffaa00]/80 text-xs text-left leading-relaxed">
+                                    Do not close this tab or navigate away during confirmation.
+                                </p>
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+            )}
+
             {/* ── REGISTRATION MODAL ── */}
             {
                 showRegModal && (
@@ -675,7 +814,7 @@ export default function EventDetail() {
                                 <div className="flex items-start gap-3 bg-[#00e5ff]/5 border border-[#00e5ff]/15 rounded-xl px-4 py-3">
                                     <span className="text-[#00e5ff] text-sm flex-shrink-0 mt-0.5">⚠️</span>
                                     <p className="text-white/40 text-xs leading-relaxed">
-                                        Registering will mint an NFT ticket to your connected wallet and this will incur transaction charges.
+                                        Registering will mint an NFT ticket to your connected wallet and blockchain transaction charges will apply.
                                     </p>
                                 </div>
 

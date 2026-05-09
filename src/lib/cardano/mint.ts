@@ -4,6 +4,8 @@ import {
   deserializeAddress,
   stringToHex,
   mConStr0,
+  mConStr1, 
+  mNone
 } from '@meshsdk/core';
 import { getAppliedScript, getPolicyId } from './policy';
 
@@ -32,6 +34,11 @@ export function getEventPrice(capacity: number): number {
 
 export function getOwnerTokenName(eventName: string): string {
   return `TXNE-${eventName}`;
+}
+
+export function getAttendeeTokenName(eventName: string, registrationNumber: number): string {
+  const paddedNumber = String(registrationNumber).padStart(4, '0');
+  return `TXNT-${eventName}-${paddedNumber}`;
 }
 
 export async function buildMintOwnerTicketTx({
@@ -117,4 +124,100 @@ export async function buildMintOwnerTicketTx({
   const txHash = await wallet.submitTx(signedTx);
 
   return { txHash, policyId };
+}
+
+export async function buildMintAttendeeTicketTx({
+  wallet,
+  eventUuid,
+  eventAlias,
+  eventTitle,
+  eventDate,
+  eventPricing,
+  ticketUuid,
+  ticketOwnerName,
+  registrationNumber,
+  nftImageUri,
+}: {
+  wallet: any;
+  eventUuid: string;
+  eventAlias: string;
+  eventTitle: string;
+  eventDate: string;
+  eventPricing: 'free' | 'paid';
+  ticketUuid: string;
+  ticketOwnerName: string;
+  registrationNumber: number;
+  nftImageUri: string;
+}): Promise<{ txHash: string; policyId: string; assetName: string }> {
+
+  const provider = new BlockfrostProvider(process.env.NEXT_PUBLIC_BLOCKFROST_KEY!);
+
+  const attendeeAddress = await wallet.getChangeAddress();
+  const utxos = await wallet.getUtxos();
+  const collateral = await wallet.getCollateral();
+
+  if (!collateral || collateral.length === 0) {
+    throw new Error(
+      'No collateral found. Please set up collateral in your wallet before registering.'
+    );
+  }
+
+  const { pubKeyHash: attendeePkh } = deserializeAddress(attendeeAddress);
+
+  // Use the event's applied script — same policy as the owner ticket
+  const appliedScript = getAppliedScript(eventUuid, eventAlias);
+  const policyId = getPolicyId(appliedScript);
+
+  // Full token name: TXNT-{eventAlias}-0001
+  const assetName = getAttendeeTokenName(eventAlias, registrationNumber);
+  const tokenName = stringToHex(assetName);
+
+  // MintAttendeeTicket is constructor index 1
+  // attendee_address: VerificationKeyHash
+  // event_type: ByteArray ("free" or "paid")
+  // ticket_price: Option<Int> (None for free)
+  const redeemer = mConStr1([
+    attendeePkh,
+    stringToHex(eventPricing),  // "free" as hex
+    mNone(),                     // ticket_price: None for free events
+  ]);
+
+  const txBuilder = new MeshTxBuilder({ fetcher: provider, verbose: true });
+
+  const unsignedTx = await txBuilder
+    .mintPlutusScriptV3()
+    .mint('1', policyId, tokenName)
+    .mintingScript(appliedScript)
+    .mintRedeemerValue(redeemer)
+    .metadataValue(721, {
+      [policyId]: {
+        [assetName]: {
+          name: assetName,
+          image: splitMetadataString(nftImageUri),
+          description: splitMetadataString(eventTitle),
+          type: 'AttendeeTicket',
+          event_id: splitMetadataString(eventUuid),
+          event_date: eventDate,
+          ticket_id: splitMetadataString(ticketUuid),
+          ticket_owner: ticketOwnerName,
+          platform: 'Tixano',
+          website: 'tixano link here',
+        },
+      },
+    })
+    .txInCollateral(
+      collateral[0].input.txHash,
+      collateral[0].input.outputIndex,
+      collateral[0].output.amount,
+      collateral[0].output.address
+    )
+    .requiredSignerHash(attendeePkh)
+    .changeAddress(attendeeAddress)
+    .selectUtxosFrom(utxos)
+    .complete();
+
+  const signedTx = await wallet.signTx(unsignedTx, true);
+  const txHash = await wallet.submitTx(signedTx);
+
+  return { txHash, policyId, assetName };
 }

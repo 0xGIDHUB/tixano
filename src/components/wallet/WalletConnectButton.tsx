@@ -18,7 +18,8 @@ export default function WalletConnectButton() {
     return `${addr.slice(0, 8)}...${addr.slice(-4)}`;
   };
 
-  const handleCopyAddress = async () => {
+  const handleCopyAddress = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (address) {
       try {
         await navigator.clipboard.writeText(address);
@@ -102,6 +103,17 @@ export default function WalletConnectButton() {
               Disconnect
             </button>
           </div>
+        )}
+
+        {toast && (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            title={toast.title}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={closeToast}
+          />
         )}
       </div>
     );

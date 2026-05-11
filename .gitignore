@@ -52,6 +52,5 @@ docs/
 .env.local
 .env
 
-GMAIL_SETUP.md
 gmail-credentials.json
 generate-gmail-token.js

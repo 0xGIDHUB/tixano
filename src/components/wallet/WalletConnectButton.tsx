@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useWallet, useWalletList } from '@meshsdk/react';
+import { useWallet, useWalletList, useAddress } from '@meshsdk/react';
 import { CARDANO_NETWORK, CARDANO_NETWORK_ID } from '@/lib/cardano/network';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
@@ -7,10 +7,27 @@ import { createPortal } from 'react-dom';
 
 export default function WalletConnectButton() {
   const { connect, disconnect, connected, connecting } = useWallet();
+  const address = useAddress();
   const wallets = useWalletList();
   const [showModal, setShowModal] = useState(false);
   const [showDisconnect, setShowDisconnect] = useState(false);
   const { toast, showToast, closeToast } = useToast();
+
+  const truncateAddress = (addr: string | undefined) => {
+    if (!addr) return '';
+    return `${addr.slice(0, 8)}...${addr.slice(-4)}`;
+  };
+
+  const handleCopyAddress = async () => {
+    if (address) {
+      try {
+        await navigator.clipboard.writeText(address);
+        showToast('Address copied to clipboard!', { title: 'Success', type: 'success', duration: 3000 });
+      } catch (err) {
+        showToast('Failed to copy address', { title: 'Error', type: 'error', duration: 3000 });
+      }
+    }
+  };
 
   // Close modal on outside click
   useEffect(() => {
@@ -65,6 +82,15 @@ export default function WalletConnectButton() {
 
         {showDisconnect && (
           <div className="absolute right-0 mt-2 w-full bg-[#111] border border-white/10 rounded-md shadow-xl overflow-hidden z-50">
+            <div className="px-2 py-3 border-b border-white/10 flex flex-col items-center">
+              <button
+                onClick={handleCopyAddress}
+                className="text-sm text-white/80 font-mono cursor-pointer hover:text-[#00e5ff] transition-colors"
+                title="Click to copy"
+              >
+                {truncateAddress(address)}
+              </button>
+            </div>
             <button
               onClick={() => {
                 disconnect();

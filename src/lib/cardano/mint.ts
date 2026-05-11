@@ -61,13 +61,13 @@ export async function buildMintOwnerTicketTx({
 
   const provider = new BlockfrostProvider(process.env.NEXT_PUBLIC_BLOCKFROST_KEY!);
 
-  const ownerAddress = await wallet.getChangeAddress();
-  const utxos = await wallet.getUtxos();
-  const collateral = await wallet.getCollateral();
+  const ownerAddress = await wallet.getChangeAddressBech32();
+  const utxos = await wallet.getUtxosMesh();
+  const collateral = await wallet.getCollateralMesh();
 
   if (!collateral || collateral.length === 0) {
     throw new Error(
-      'No collateral found in your wallet. Please set up collateral in your wallet settings (usually ~5 ADA) before creating an event.'
+      'Please set up collateral in your wallet before creating an event.'
     );
   }
 
@@ -120,7 +120,7 @@ export async function buildMintOwnerTicketTx({
     .selectUtxosFrom(utxos)
     .complete();
 
-  const signedTx = await wallet.signTx(unsignedTx, true);
+  const signedTx = await wallet.signTxReturnFullTx(unsignedTx, false);
   const txHash = await wallet.submitTx(signedTx);
 
   return { txHash, policyId };
@@ -152,13 +152,13 @@ export async function buildMintAttendeeTicketTx({
 
   const provider = new BlockfrostProvider(process.env.NEXT_PUBLIC_BLOCKFROST_KEY!);
 
-  const attendeeAddress = await wallet.getChangeAddress();
-  const utxos = await wallet.getUtxos();
-  const collateral = await wallet.getCollateral();
+  const attendeeAddress = await wallet.getChangeAddressBech32();
+  const utxos = await wallet.getUtxosMesh();
+  const collateral = await wallet.getCollateralMesh();
 
   if (!collateral || collateral.length === 0) {
     throw new Error(
-      'No collateral found. Please set up collateral in your wallet before registering.'
+      'Please set up collateral in your wallet before registering.'
     );
   }
 
@@ -216,7 +216,8 @@ export async function buildMintAttendeeTicketTx({
     .selectUtxosFrom(utxos)
     .complete();
 
-  const signedTx = await wallet.signTx(unsignedTx, true);
+  const signedTx = await wallet.signTxReturnFullTx(unsignedTx, false);
+  console.log('Signed Tx:', signedTx);
   const txHash = await wallet.submitTx(signedTx);
 
   return { txHash, policyId, assetName };

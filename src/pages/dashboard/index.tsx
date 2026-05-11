@@ -1,0 +1,1 @@
+// Single dashboard page for users to view and manage their events and tickets

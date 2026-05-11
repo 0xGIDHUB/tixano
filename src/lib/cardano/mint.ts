@@ -217,7 +217,6 @@ export async function buildMintAttendeeTicketTx({
     .complete();
 
   const signedTx = await wallet.signTxReturnFullTx(unsignedTx, false);
-  console.log('Signed Tx:', signedTx);
   const txHash = await wallet.submitTx(signedTx);
 
   return { txHash, policyId, assetName };

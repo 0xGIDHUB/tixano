@@ -725,7 +725,7 @@ export default function EventDetail() {
 
                         <p className="text-white/40 text-sm leading-relaxed mb-6">
                             {processingStep === 'signing' &&
-                                'Please check your wallet and sign the transaction to mint your NFT ticket.'}
+                                'Sign the transaction in your wallet to mint your NFT ticket.'}
                             {processingStep === 'confirming' &&
                                 'Your transaction has been submitted. Waiting for confirmation on the Cardano blockchain. This may take 30–60 seconds.'}
                             {processingStep === 'saving' &&

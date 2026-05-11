@@ -218,7 +218,7 @@ export default function CreateEvent() {
             if (form.bannerImage) bannerImageUrl = await uploadEventImage(form.bannerImage, 'banners');
 
             setProcessingStep('saving');
-            const ownerAddress = await wallet.getChangeAddress();
+            const ownerAddress = await wallet.getChangeAddressBech32();
 
             const res = await fetch('/api/events', {
                 method: 'POST',

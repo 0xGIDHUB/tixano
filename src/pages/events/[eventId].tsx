@@ -268,7 +268,7 @@ export default function EventDetail() {
 
             // 5. Save ticket to database
             setProcessingStep('saving');
-            const attendeeAddress = await wallet.getChangeAddress();
+            const attendeeAddress = await wallet.getChangeAddressBech32();
 
             const ticketRes = await fetch('/api/tickets', {
                 method: 'POST',

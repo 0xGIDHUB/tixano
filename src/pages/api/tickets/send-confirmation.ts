@@ -187,28 +187,42 @@ function generateConfirmationEmail({
             </div>
 
             <!-- Ticket Information -->
-            <div class="ticket-info">
-              <div class="info-row">
-                <span class="info-label">Event:</span>
-                <span class="info-value">${escapeHtml(eventTitle)}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Date:</span>
-                <span class="info-value">${escapeHtml(eventDate)}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Ticket ID:</span>
-                <span class="info-value">${escapeHtml(ticketId)}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Asset Name:</span>
-                <span class="info-value">${escapeHtml(assetName)}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Transaction Hash:</span>
-                <span class="info-value">${escapeHtml(txHash.substring(0, 16))}...</span>
-              </div>
-            </div>
+            <div style="background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:20px;margin-bottom:24px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Event</span>
+                </td>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:13px;color:rgba(255,255,255,0.8);">
+                  ${eventTitle}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Date</span>
+                </td>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:13px;color:rgba(255,255,255,0.8);">
+                  ${eventDate}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Ticket ID</span>
+                </td>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.6);">
+                  ${ticketId}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Token Name</span>
+                </td>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.6);">
+                  ${assetName}
+                </td>
+              </tr>
+            </table>
+          </div>
 
             <!-- Call to Action -->
             <div class="cta-section">
@@ -222,15 +236,11 @@ function generateConfirmationEmail({
             <div style="background-color: #f0f7ff; border-left: 4px solid #0099cc; padding: 16px; border-radius: 4px; margin: 24px 0; font-size: 14px; color: #333;">
               <strong style="color: #0099cc;">📌 Next Steps:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px; line-height: 1.8;">
-                <li>Keep this email safe for your records</li>
                 <li>Your NFT ticket is now stored in your connected wallet</li>
-                <li>You can manage your ticket through your Cardano wallet</li>
+                <li>Ensure you have your ticket available for check-in at the event</li>
+                <li>You can see the full details of your ticket through your Cardano wallet</li>
               </ul>
             </div>
-
-            <p style="color: #666; font-size: 13px; line-height: 1.6;">
-              If you have any questions or need further assistance, please don't hesitate to reach out. We're here to help!
-            </p>
           </div>
 
           <!-- Footer -->

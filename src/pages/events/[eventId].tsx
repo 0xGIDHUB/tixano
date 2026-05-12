@@ -240,15 +240,28 @@ export default function EventDetail() {
         setRegistering(true);
         setShowRegModal(false);
 
+        let claimedNumber: number | null = null; // ← track for release on failure
+
         try {
-            // 1. Generate ticket UUID
             const ticketUuid = crypto.randomUUID();
 
-            // 2. Determine registration number (next after current total)
-            const registrationNumber = (event.total_registrations ?? 0) + 1;
-
-            // 3. Mint attendee NFT on-chain
+            // Claim registration number
             setProcessingStep('signing');
+            const claimRes = await fetch('/api/tickets/claim-number', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventId: event.id }),
+            });
+
+            if (!claimRes.ok) {
+                const err = await claimRes.json();
+                throw new Error(err.error || 'Failed to claim registration number');
+            }
+
+            const { registrationNumber } = await claimRes.json();
+            claimedNumber = registrationNumber; // ← store for potential release
+
+            // Mint NFT
             const { txHash, policyId, assetName } = await buildMintAttendeeTicketTx({
                 wallet,
                 eventUuid: event.id,
@@ -259,7 +272,7 @@ export default function EventDetail() {
                 ticketUuid,
                 ticketOwnerName: regForm.fullName,
                 registrationNumber,
-                nftImageUri: '',  // ← leave blank for now
+                nftImageUri: '',
             });
 
             // 4. Wait for on-chain confirmation
@@ -315,7 +328,7 @@ export default function EventDetail() {
             showToast('Your NFT ticket has been minted successfully.', {
                 title: 'Registration Complete',
                 type: 'success',
-                duration: 12000,
+                duration: 10000,
                 txHash,
             });
 
@@ -329,6 +342,19 @@ export default function EventDetail() {
 
         } catch (err: any) {
             console.error(err);
+
+            // Release the claimed number back to the pool if minting failed
+            if (claimedNumber !== null) {
+                await fetch('/api/tickets/release-number', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        eventId: event.id,
+                        registrationNumber: claimedNumber,
+                    }),
+                }).catch(() => { }); // non-fatal if this also fails
+            }
+
             setRegistering(false);
             setProcessingStep(null);
             showToast(err.message || 'Registration failed. Please try again.', {
@@ -814,7 +840,7 @@ export default function EventDetail() {
                                 <div className="flex items-start gap-3 bg-[#00e5ff]/5 border border-[#00e5ff]/15 rounded-xl px-4 py-3">
                                     <span className="text-[#00e5ff] text-sm flex-shrink-0 mt-0.5">⚠️</span>
                                     <p className="text-white/40 text-xs leading-relaxed">
-                                        Registering will mint an NFT ticket to your connected wallet and blockchain transaction charges will apply.
+                                        Registering for this event will mint an NFT ticket to your wallet and blockchain transaction charges will apply.
                                     </p>
                                 </div>
 

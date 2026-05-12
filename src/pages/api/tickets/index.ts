@@ -49,15 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: ticketError.message });
   }
 
-  // Increment total_registrations on the event
-  const { error: updateError } = await supabaseAdmin.rpc('increment_registrations', {
-    event_id: eventId,
-  });
-
-  if (updateError) {
-    console.error('Registration count update error:', updateError);
-    // Non-fatal — ticket was still created
-  }
 
   return res.status(201).json({ ticket });
 }

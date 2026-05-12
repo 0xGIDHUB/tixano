@@ -258,7 +258,7 @@ function generateConfirmationEmail({
               <ul style="margin: 8px 0 0 0; padding-left: 20px; line-height: 1.8;">
                 <li>Your NFT ticket is now stored in your connected wallet</li>
                 <li>Ensure you have your ticket available for check-in at the event</li>
-                <li>You can see the full details of your ticket through your Cardano wallet</li>
+                <li>You can see the full details of your ticket in your Cardano wallet</li>
               </ul>
             </div>
           </div>

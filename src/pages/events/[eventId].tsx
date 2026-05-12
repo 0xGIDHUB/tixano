@@ -240,13 +240,18 @@ export default function EventDetail() {
         setRegistering(true);
         setShowRegModal(false);
 
-        let claimedNumber: number | null = null; // ← track for release on failure
+        let claimedNumber: number | null = null;
+        // This flips to true the moment buildMintAttendeeTicketTx resolves.
+        // After that point, the number is permanently committed to the NFT
+        // metadata on-chain and must NEVER be released back to the pool.
+        let mintSubmitted = false;
 
         try {
             const ticketUuid = crypto.randomUUID();
 
-            // Claim registration number
+            // ── 1. Claim registration number ──────────────────────────────────────
             setProcessingStep('signing');
+
             const claimRes = await fetch('/api/tickets/claim-number', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -259,9 +264,9 @@ export default function EventDetail() {
             }
 
             const { registrationNumber } = await claimRes.json();
-            claimedNumber = registrationNumber; // ← store for potential release
+            claimedNumber = registrationNumber;
 
-            // Mint NFT
+            // ── 2. Mint NFT ───────────────────────────────────────────────────────
             const { txHash, policyId, assetName } = await buildMintAttendeeTicketTx({
                 wallet,
                 eventUuid: event.id,
@@ -275,11 +280,15 @@ export default function EventDetail() {
                 nftImageUri: '',
             });
 
-            // 4. Wait for on-chain confirmation
+            // Mint was submitted to chain — number is now permanently committed.
+            // Do not release it under any circumstances after this point.
+            mintSubmitted = true;
+
+            // ── 3. Wait for on-chain confirmation ─────────────────────────────────
             setProcessingStep('confirming');
             await waitForConfirmation(txHash);
 
-            // 5. Save ticket to database
+            // ── 4. Save ticket to database ────────────────────────────────────────
             setProcessingStep('saving');
             const attendeeAddress = await wallet.getChangeAddressBech32();
 
@@ -306,7 +315,7 @@ export default function EventDetail() {
                 throw new Error(err.error || 'Failed to save ticket');
             }
 
-            // 6. Send confirmation email
+            // ── 5. Send confirmation email ────────────────────────────────────────
             await fetch('/api/tickets/send-confirmation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -322,7 +331,7 @@ export default function EventDetail() {
                 }),
             });
 
-            // 7. Done
+            // ── 6. Done ───────────────────────────────────────────────────────────
             setRegistering(false);
             setProcessingStep(null);
 
@@ -333,7 +342,7 @@ export default function EventDetail() {
                 txHash,
             });
 
-            // Refresh event data to update registration count
+            // Refresh event data to update registration count.
             const { data } = await supabase
                 .from('events')
                 .select('total_registrations')
@@ -344,8 +353,10 @@ export default function EventDetail() {
         } catch (err: any) {
             console.error(err);
 
-            // Release the claimed number back to the pool if minting failed
-            if (claimedNumber !== null) {
+            // Only release the number if the mint was never submitted.
+            // If mintSubmitted is true, the number is baked into an NFT on-chain
+            // and releasing it would cause a duplicate registration number.
+            if (claimedNumber !== null && !mintSubmitted) {
                 await fetch('/api/tickets/release-number', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -353,7 +364,7 @@ export default function EventDetail() {
                         eventId: event.id,
                         registrationNumber: claimedNumber,
                     }),
-                }).catch(() => { }); // non-fatal if this also fails
+                }).catch(() => { });
             }
 
             setRegistering(false);

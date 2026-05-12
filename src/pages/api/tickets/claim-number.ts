@@ -9,44 +9,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { eventId } = req.body;
   if (!eventId) return res.status(400).json({ error: 'Missing eventId' });
 
-  // First check if there are any failed reservations to reuse
-  const { data: event, error: fetchError } = await supabaseAdmin
-    .from('events')
-    .select('failed_reservations')
-    .eq('id', eventId)
-    .single();
+  // Step 1 — Try to claim a previously failed reservation number first.
+  // This RPC locks the row atomically so no race condition is possible.
+  const { data: reclaimedNumber, error: reclaimError } = await supabaseAdmin
+    .rpc('claim_failed_reservation', { event_id: eventId });
 
-  if (fetchError) {
-    return res.status(500).json({ error: fetchError.message });
+  if (reclaimError) {
+    console.error('Reclaim error:', reclaimError);
+    return res.status(500).json({ error: reclaimError.message });
   }
 
-  const hasFailed = event.failed_reservations && event.failed_reservations.length > 0;
-
-  if (hasFailed) {
-    // Pop the first failed reservation number — atomic operation
-    const { data, error } = await supabaseAdmin
-      .rpc('claim_failed_reservation', { event_id: eventId });
-
-    if (error || data === null) {
-      // Race condition — another user claimed it, fall through to increment
-    } else {
-      return res.status(200).json({
-        registrationNumber: data,
-        reused: true,
-      });
-    }
+  // A number was available in failed_reservations — reuse it.
+  // Do NOT call increment_registrations here; total_registrations stays the same.
+  if (reclaimedNumber !== null) {
+    return res.status(200).json({
+      registrationNumber: reclaimedNumber,
+      reused: true,
+    });
   }
 
-  // No failed reservations — increment and return new number
-  const { data, error } = await supabaseAdmin
+  // Step 2 — No failed reservations available, claim a fresh slot.
+  const { data: newNumber, error: incrementError } = await supabaseAdmin
     .rpc('increment_registrations', { event_id: eventId });
 
-  if (error) {
-    return res.status(500).json({ error: error.message });
+  if (incrementError) {
+    if (incrementError.message.includes('EVENT_FULL')) {
+      return res.status(409).json({ error: 'This event is now fully booked.' });
+    }
+    console.error('Increment error:', incrementError);
+    return res.status(500).json({ error: incrementError.message });
   }
 
   return res.status(200).json({
-    registrationNumber: data,
+    registrationNumber: newNumber,
     reused: false,
   });
 }

@@ -315,23 +315,7 @@ export default function EventDetail() {
                 throw new Error(err.error || 'Failed to save ticket');
             }
 
-            // ── 5. Send confirmation email ────────────────────────────────────────
-            await fetch('/api/tickets/send-confirmation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ownerEmail: regForm.email,
-                    ownerName: regForm.fullName,
-                    eventTitle: event.title,
-                    eventDate: event.date ?? 'TBA',
-                    eventStartTime: event.start_time,
-                    ticketId: ticketUuid,
-                    txHash,
-                    assetName,
-                }),
-            });
-
-            // ── 6. Done ───────────────────────────────────────────────────────────
+            // ── 5. Done ───────────────────────────────────────────────────────────
             setRegistering(false);
             setProcessingStep(null);
 
@@ -349,6 +333,22 @@ export default function EventDetail() {
                 .eq('id', event.id)
                 .single();
             if (data) setEvent(prev => prev ? { ...prev, total_registrations: data.total_registrations } : prev);
+
+            // ── Finally, send confirmation email ────────────────────────────────────────
+            await fetch('/api/tickets/send-confirmation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ownerEmail: regForm.email,
+                    ownerName: regForm.fullName,
+                    eventTitle: event.title,
+                    eventDate: event.date ?? 'TBA',
+                    eventStartTime: event.start_time,
+                    ticketId: ticketUuid,
+                    txHash,
+                    assetName,
+                }),
+            });
 
         } catch (err: any) {
             console.error(err);

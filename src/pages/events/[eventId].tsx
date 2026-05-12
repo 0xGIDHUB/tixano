@@ -315,6 +315,7 @@ export default function EventDetail() {
                     ownerName: regForm.fullName,
                     eventTitle: event.title,
                     eventDate: event.date ?? 'TBA',
+                    eventStartTime: event.start_time,
                     ticketId: ticketUuid,
                     txHash,
                     assetName,

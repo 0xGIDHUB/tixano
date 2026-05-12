@@ -16,7 +16,7 @@ export default async function handler(
   }
 
   try {
-    const { ownerEmail, ownerName, eventTitle, eventDate, ticketId, txHash, assetName } = req.body;
+    const { ownerEmail, ownerName, eventTitle, eventDate, eventStartTime, ticketId, txHash, assetName } = req.body;
 
     // Validate required fields
     if (!ownerEmail || !ownerName || !eventTitle || !ticketId || !txHash) {
@@ -28,6 +28,7 @@ export default async function handler(
       ownerName,
       eventTitle,
       eventDate,
+      eventStartTime,
       ticketId,
       txHash,
       assetName,
@@ -52,10 +53,20 @@ export default async function handler(
   }
 }
 
+function formatTime(timeStr: string | null): string {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const display = hour % 12 === 0 ? 12 : hour % 12;
+    return `${display}:${m} ${period}`;
+}
+
 function generateConfirmationEmail({
   ownerName,
   eventTitle,
   eventDate,
+  eventStartTime,
   ticketId,
   txHash,
   assetName,
@@ -63,6 +74,7 @@ function generateConfirmationEmail({
   ownerName: string;
   eventTitle: string;
   eventDate: string;
+  eventStartTime: string;
   ticketId: string;
   txHash: string;
   assetName: string;
@@ -207,6 +219,14 @@ function generateConfirmationEmail({
               </tr>
               <tr>
                 <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Starting</span>
+                </td>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:13px;color:rgba(255,255,255,0.8);">
+                  ${formatTime(eventStartTime)}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
                   <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Ticket ID</span>
                 </td>
                 <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.6);">
@@ -246,7 +266,7 @@ function generateConfirmationEmail({
           <!-- Footer -->
           <div class="footer">
             <p>
-              © ${new Date().getFullYear()} Tixano.
+              ${new Date().getFullYear()} - Tixano.
             </p>
           </div>
         </div>

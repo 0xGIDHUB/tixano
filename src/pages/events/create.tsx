@@ -9,6 +9,7 @@ import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
 import { getEventPrice } from '@/lib/cardano/mint';
 import { generateNftImage } from '@/lib/ipfs/generateNftImage';
+import { ThreeDot } from "react-loading-indicators";
 
 type PricingType = 'free' | 'paid';
 
@@ -944,8 +945,10 @@ export default function CreateEvent() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4">
                     <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl text-center">
 
-                        {/* Spinner */}
-                        <div className="w-16 h-16 rounded-full border-2 border-white/5 border-t-[#00e5ff] animate-spin mx-auto mb-6" />
+                        {/* Loading Animation */}
+                        <div className="flex items-center justify-center mb-8 mt-8 w-full">
+                            <ThreeDot color="#00e5ff" size="small" text="" textColor="" />
+                        </div>
 
                         <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
                             {processingStep === 'signing' && 'Waiting for Signature'}

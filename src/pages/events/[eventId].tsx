@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast';
 import { buildMintAttendeeTicketTx, getAttendeeTokenName} from '@/lib/cardano/mint';
 import { waitForConfirmation } from '@/lib/cardano/verify';
 import { generateTicketImage } from '@/lib/ipfs/generateTicketImage';
+import { ThreeDot } from "react-loading-indicators";
 
 interface Event {
     id: string;
@@ -763,7 +764,10 @@ export default function EventDetail() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4">
                     <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl text-center">
 
-                        <div className="w-16 h-16 rounded-full border-2 border-white/5 border-t-[#00e5ff] animate-spin mx-auto mb-6" />
+                        {/* Loading Animation */}
+                        <div className="flex items-center justify-center mb-8 mt-8 w-full">
+                            <ThreeDot color="#00e5ff" size="small" text="" textColor="" />
+                        </div>
 
                         <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
                             {processingStep === 'signing' && 'Waiting for Signature'}
@@ -815,10 +819,10 @@ export default function EventDetail() {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className={labelClass}>Full Name <span className="text-red-400">*</span></label>
+                                        <label className={labelClass}>Name <span className="text-red-400">*</span></label>
                                         <input
                                             type="text"
-                                            placeholder="Your full name"
+                                            placeholder="Your name"
                                             value={regForm.fullName}
                                             onChange={(e) => setRegForm(f => ({ ...f, fullName: e.target.value }))}
                                             className={inputClass}

@@ -159,14 +159,14 @@ export default function WalletConnectButton() {
 
                   {[
                     {
-                      name: 'Eternl',
-                      url: 'https://chromewebstore.google.com/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka',
-                      color: '#4B9FE1',
-                    },
-                    {
                       name: 'Vespr',
                       url: 'https://chromewebstore.google.com/detail/vespr-wallet/bedogdpgdnifilpgeianmmdabklhfkcn',
                       color: '#9B6DFF',
+                    },
+                    {
+                      name: 'Eternl',
+                      url: 'https://chromewebstore.google.com/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka',
+                      color: '#4B9FE1',
                     },
                     {
                       name: 'Lace',

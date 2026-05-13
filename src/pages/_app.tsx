@@ -4,6 +4,7 @@ import { MeshProvider, useWallet } from "@meshsdk/react";
 import PageWrapper from '@/components/layout/PageWrapper';
 import type { NextComponentType, NextPageContext } from "next";
 import { useEffect } from "react";
+import { useRouter } from "next/router";
 
 type CustomAppProps = AppProps & {
   Component: NextComponentType<NextPageContext, any, any> & {
@@ -29,7 +30,9 @@ function AutoReconnect() {
 }
 
 export default function App({ Component, pageProps }: CustomAppProps) {
+  const router = useRouter();
   const hideLayout = Component.hideLayout ?? false;
+  const isDashboard = router.pathname === '/dashboard';
 
   return (
     <MeshProvider>
@@ -37,7 +40,7 @@ export default function App({ Component, pageProps }: CustomAppProps) {
       {hideLayout ? (
         <Component {...pageProps} />
       ) : (
-        <PageWrapper>
+        <PageWrapper hideFooter={isDashboard}>
           <Component {...pageProps} />
         </PageWrapper>
       )}

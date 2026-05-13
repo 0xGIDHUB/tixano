@@ -905,7 +905,7 @@ export default function CreateEvent() {
                         <div className="bg-black/40 border border-white/5 rounded-lg px-4 py-3 mb-6 flex flex-col gap-1.5">
                             <div className="flex justify-between text-xs">
                                 <span className="text-white/30">Event</span>
-                                <span className="text-white/70 font-medium truncate ml-4">{form.eventAlias}</span>
+                                <span className="text-white/70 font-medium truncate ml-4">{form.title}</span>
                             </div>
                             <div className="flex justify-between text-xs">
                                 <span className="text-white/30">Capacity</span>

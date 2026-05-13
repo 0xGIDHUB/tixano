@@ -51,8 +51,22 @@ export default async function handler(
 
         const bannerImage = await loadImage(bannerImageBase64);
 
-        // NO rounded clipping anymore
-        ctx.drawImage(bannerImage, 0, 0, W, BANNER_H);
+        // With this — object-fit: cover equivalent
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, W, BANNER_H);
+        ctx.clip();
+
+        const bw = bannerImage.width;
+        const bh = bannerImage.height;
+        const bannerScale = Math.max(W / bw, BANNER_H / bh);
+        const scaledW = bw * bannerScale;
+        const scaledH = bh * bannerScale;
+        const bannerOffsetX = (W - scaledW) / 2;
+        const bannerOffsetY = (BANNER_H - scaledH) / 2;
+        ctx.drawImage(bannerImage, bannerOffsetX, bannerOffsetY, scaledW, scaledH);
+
+        ctx.restore();
 
         // ── ASSET NAME TITLE ──
         const titleY = BANNER_H + 20;
@@ -255,7 +269,7 @@ export default async function handler(
 
         const cardanoSize = 56;
 
-        ctx.globalAlpha = 0.65;
+        ctx.globalAlpha = 0.85;
 
         ctx.drawImage(
             cardanoLogo,

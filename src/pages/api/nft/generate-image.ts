@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 5. Draw cyan border
     ctx.strokeStyle = '#00E5FF';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeRect(2, 2, SIZE - 4, SIZE - 4);
 
     // 6. Export canvas as PNG buffer

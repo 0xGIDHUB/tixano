@@ -37,7 +37,7 @@ export default async function handler(
     // Send email
     await sendEmail(
       ownerEmail,
-      `Your ${eventTitle} NFT Ticket Confirmation`,
+      `${eventTitle} NFT Ticket Confirmation`,
       emailHtml
     );
 
@@ -235,7 +235,7 @@ function generateConfirmationEmail({
               </tr>
               <tr>
                 <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Token Name</span>
+                  <span style="color:rgba(255,255,255,0.3);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Ticket Name</span>
                 </td>
                 <td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.6);">
                   ${assetName}

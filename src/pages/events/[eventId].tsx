@@ -6,8 +6,9 @@ import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
-import { buildMintAttendeeTicketTx } from '@/lib/cardano/mint';
+import { buildMintAttendeeTicketTx, getAttendeeTokenName} from '@/lib/cardano/mint';
 import { waitForConfirmation } from '@/lib/cardano/verify';
+import { generateTicketImage } from '@/lib/ipfs/generateTicketImage';
 
 interface Event {
     id: string;
@@ -266,6 +267,16 @@ export default function EventDetail() {
             const { registrationNumber } = await claimRes.json();
             claimedNumber = registrationNumber;
 
+            // Generate ticket NFT image and upload to IPFS
+            const nftImageUri = await generateTicketImage({
+                bannerImageUrl: event.banner_image_url,
+                ticketId: ticketUuid,
+                eventTitle: event.title,
+                eventAlias: event.event_alias,
+                eventDate: event.date,
+                assetName: getAttendeeTokenName(event.event_alias, registrationNumber),
+            });
+
             // ── 2. Mint NFT ───────────────────────────────────────────────────────
             const { txHash, policyId, assetName } = await buildMintAttendeeTicketTx({
                 wallet,
@@ -277,7 +288,7 @@ export default function EventDetail() {
                 ticketUuid,
                 ticketOwnerName: regForm.fullName,
                 registrationNumber,
-                nftImageUri: '',
+                nftImageUri,
             });
 
             // Mint was submitted to chain — number is now permanently committed.
@@ -306,7 +317,7 @@ export default function EventDetail() {
                     ownerEmail: regForm.email,
                     ownerPhone: regForm.phone || null,
                     ownerExpectation: regForm.expectation || null,
-                    nftImageUrl: null,
+                    nftImageUrl: nftImageUri,
                 }),
             });
 

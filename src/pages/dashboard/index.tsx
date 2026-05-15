@@ -40,6 +40,8 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'unused' | 'used'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 800);
     return () => clearTimeout(timer);
@@ -232,6 +234,7 @@ export default function Dashboard() {
                         <button
                           key={ticket.id}
                           onClick={async () => {
+                            setImageLoaded(false);
                             const { data: eventData } = await supabase
                               .from('events')
                               .select('title')
@@ -440,43 +443,44 @@ export default function Dashboard() {
             className="w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Ticket image with blurred QR region */}
+            {/* Ticket image with skeleton loading */}
             {selectedTicket.nft_image_url && (
               <div className="relative w-full flex-shrink-0 overflow-hidden" style={{ height: '220px' }}>
-                {/* Full image */}
+
+                {/* Skeleton — shown while image loads */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-[#0d0d0d] animate-pulse flex flex-col gap-3 p-5 justify-end">
+                    {/* Simulated image shimmer layers */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/3 to-transparent" />
+                    <div className="absolute top-4 left-4 w-16 h-2 bg-white/5 rounded-full" />
+                    <div className="absolute top-8 left-4 w-10 h-2 bg-white/5 rounded-full" />
+                    <div className="absolute bottom-4 right-4 w-20 h-6 bg-white/5 rounded-lg" />
+                  </div>
+                )}
+
+                {/* Actual image — rendered but invisible until loaded */}
                 <img
                   src={selectedTicket.nft_image_url.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')}
                   alt={selectedTicket.asset_name}
-                  className="w-full h-full object-cover"
+                  onLoad={() => setImageLoaded(true)}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
                 />
-                {/* Blur overlay — covers the QR code region (bottom 60% of image) */}
-                {/* <div
-                  className="absolute left-0 right-0 bottom-0 backdrop-blur-md"
-                  style={{ height: '62%', background: 'rgba(5,5,5,0.45)' }}
-                /> */}
-                {/* Lock icon over blurred area
-                <div className="absolute bottom-0 left-0 right-0 h-[62%] flex flex-col items-center justify-center gap-2 pointer-events-none">
-                  <div className="w-10 h-10 rounded-full bg-black/60 border border-white/15 flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-                      <path d="M8 11V7a4 4 0 018 0v4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </div> */}
-                {/* <p className="text-white/30 text-[11px] text-center px-6 leading-relaxed">
-                    QR code hidden for security.<br />View in your wallet to scan.
-                  </p>
-                </div> */}
-                {/* Status badge */}
-                <div className="absolute top-3 right-3">
-                  <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border backdrop-blur-sm
-              ${selectedTicket.status === 'used'
-                      ? 'text-red-400 border-red-400/30 bg-black/60'
-                      : 'text-[#00ff88] border-[#00ff88]/30 bg-black/60'
-                    }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedTicket.status === 'used' ? 'bg-red-400' : 'bg-[#00ff88]'}`} />
-                    {selectedTicket.status}
-                  </span>
-                </div>
+
+                {/* Status badge — only show once image is ready */}
+                {imageLoaded && (
+                  <div className="absolute top-3 right-3">
+                    <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border backdrop-blur-sm
+          ${selectedTicket.status === 'used'
+                        ? 'text-red-400 border-red-400/30 bg-black/60'
+                        : 'text-[#00ff88] border-[#00ff88]/30 bg-black/60'
+                      }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${selectedTicket.status === 'used' ? 'bg-red-400' : 'bg-[#00ff88]'}`} />
+                      {selectedTicket.status}
+                    </span>
+                  </div>
+                )}
+
               </div>
             )}
 

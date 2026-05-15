@@ -469,8 +469,8 @@ export default function Dashboard() {
 
                 {/* Status badge — only show once image is ready */}
                 {imageLoaded && (
-                  <div className="absolute top-3 right-3">
-                    <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border backdrop-blur-sm
+                  <div className="absolute top-2 right-2">
+                    <span className={`flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border backdrop-blur-sm
           ${selectedTicket.status === 'used'
                         ? 'text-red-400 border-red-400/30 bg-black/60'
                         : 'text-[#00ff88] border-[#00ff88]/30 bg-black/60'

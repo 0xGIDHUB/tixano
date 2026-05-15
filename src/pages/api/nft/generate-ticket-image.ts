@@ -94,57 +94,16 @@ export default async function handler(
         ctx.lineWidth = 5;
         ctx.strokeRect(2, 2, W - 4, H - 4);
 
-        // ── DIVIDER WITH NOTCHES ──
+        // ── DIVIDER ──
         const dividerY = BANNER_H + 90;
-        const NOTCH_R = 30;
 
-        // Use destination-out to punch TRUE transparent holes at both sides
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-out';
-
-        // Left notch — erase a semicircle from the left edge
-        ctx.beginPath();
-        ctx.arc(0, dividerY, NOTCH_R, -Math.PI / 2, Math.PI / 2);
-        ctx.fill();
-
-        // Right notch — erase a semicircle from the right edge
-        ctx.beginPath();
-        ctx.arc(W, dividerY, NOTCH_R, Math.PI / 2, -Math.PI / 2);
-        ctx.fill();
-
-        ctx.restore(); // restore normal compositing
-
-        // Redraw the cyan border in two halves (above and below the notches)
-        ctx.strokeStyle = '#00E5FF';
-        ctx.lineWidth = 4;
-
-        // Top half — top edge + left and right sides down to notch
-        ctx.beginPath();
-        ctx.moveTo(2, 2);
-        ctx.lineTo(W - 2, 2);
-        ctx.lineTo(W - 2, dividerY - NOTCH_R);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(2, 2);
-        ctx.lineTo(2, dividerY - NOTCH_R);
-        ctx.stroke();
-
-        // Bottom half — left and right sides from notch down + bottom edge
-        ctx.beginPath();
-        ctx.moveTo(2, dividerY + NOTCH_R);
-        ctx.lineTo(2, H - 2);
-        ctx.lineTo(W - 2, H - 2);
-        ctx.lineTo(W - 2, dividerY + NOTCH_R);
-        ctx.stroke();
-
-        // Dashed divider line between the notches
+        // Dashed divider line — full width, no notches
         ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.setLineDash([8, 6]);
+        ctx.setLineDash([10, 8]);
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(NOTCH_R + 8, dividerY);
-        ctx.lineTo(W - NOTCH_R - 8, dividerY);
+        ctx.moveTo(8, dividerY);
+        ctx.lineTo(W - 8, dividerY);
         ctx.stroke();
         ctx.setLineDash([]);
 

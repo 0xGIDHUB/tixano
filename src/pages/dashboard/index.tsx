@@ -22,7 +22,7 @@ interface TicketDetail extends Ticket {
   policy_id: string | null;
 }
 
-const ITEMS_PER_PAGE = 20; // 5 columns × 4 rows
+const ITEMS_PER_PAGE = 12; // 3 columns × 4 rows
 
 export default function Dashboard() {
   const { connected, wallet } = useWallet();
@@ -168,10 +168,10 @@ export default function Dashboard() {
 
               {/* Loading — skeleton grid */}
               {ticketsLoading && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {Array.from({ length: 20 }).map((_, i) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
                     <div key={i} className="flex flex-col bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden animate-pulse">
-                      <div className="px-3 py-4 flex flex-col gap-2 items-center">
+                      <div className="px-2 py-4 flex flex-col gap-2 items-center">
                         <div className="h-6 bg-white/5 rounded w-4/5" />
                         <div className="h-2 bg-white/5 rounded w-2/5" />
                       </div>
@@ -227,9 +227,9 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Grid — 4 rows max (20 tickets) */}
+                  {/* Grid — 4 rows max (12 tickets) */}
                   {filteredTickets.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 content-start" style={{ minHeight: '272px' }}>
+                    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-3 gap-4 content-start" style={{ minHeight: '272px' }}>
                       {paginatedTickets.map((ticket) => (
                         <button
                           key={ticket.id}
@@ -243,7 +243,7 @@ export default function Dashboard() {
                             setEventTitle(eventData?.title || 'Unknown Event');
                             setSelectedTicket(ticket as TicketDetail);
                           }}
-                          className="group relative transition-all duration-200 hover:-translate-y-0.5"
+                          className="group relative transition-all duration-200 hover:-translate-y-1"
                         >
                           {/* Base ticket shape */}
                           <svg

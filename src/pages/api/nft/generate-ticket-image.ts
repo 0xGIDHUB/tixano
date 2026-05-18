@@ -100,7 +100,7 @@ export default async function handler(
         // Dashed divider line — full width, no notches
         ctx.strokeStyle = 'rgba(255,255,255,0.35)';
         ctx.setLineDash([10, 8]);
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(8, dividerY);
         ctx.lineTo(W - 8, dividerY);

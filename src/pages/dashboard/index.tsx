@@ -452,9 +452,7 @@ export default function Dashboard() {
                   <div className="absolute inset-0 bg-[#0d0d0d] animate-pulse flex flex-col gap-3 p-5 justify-end">
                     {/* Simulated image shimmer layers */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-white/3 to-transparent" />
-                    <div className="absolute top-4 left-4 w-16 h-2 bg-white/5 rounded-full" />
-                    <div className="absolute top-8 left-4 w-10 h-2 bg-white/5 rounded-full" />
-                    <div className="absolute bottom-4 right-4 w-20 h-6 bg-white/5 rounded-lg" />
+                    <div className="absolute top-2 right-2 w-16 h-5 bg-white/5 rounded-lg" />
                   </div>
                 )}
 

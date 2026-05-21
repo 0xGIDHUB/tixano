@@ -197,7 +197,7 @@ export default function ExploreEvents() {
 
   const startInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(advance, 5000);
+    intervalRef.current = setInterval(advance, 6500);
   }, [advance]);
 
   useEffect(() => {
@@ -355,7 +355,7 @@ export default function ExploreEvents() {
                     />
                   ))}
                   <div className="flex-1 h-px bg-white/5 ml-2 overflow-hidden rounded-full">
-                    <div key={activeIndex} className="h-full bg-[#00e5ff]/30 rounded-full" style={{ animation: 'drain 5s linear forwards' }} />
+                    <div key={activeIndex} className="h-full bg-[#00e5ff]/30 rounded-full" style={{ animation: 'drain 6s linear forwards' }} />
                   </div>
                 </div>
               )}

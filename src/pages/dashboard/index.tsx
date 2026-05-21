@@ -164,7 +164,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
   return (
     <div className="flex-1 flex flex-col">
 
-      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+      <div className="flex items-center justify-center mb-2 flex-shrink-0">
         <p className="text-white/20 text-xs font-mono">
           <span className="text-white/60">{String(activeIndex + 1).padStart(2, '0')}</span>
           <span> / {String(events.length).padStart(2, '0')}</span>

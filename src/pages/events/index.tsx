@@ -105,6 +105,12 @@ export default function ExploreEvents() {
   // Fetch initial data
   useEffect(() => {
     async function fetchData() {
+      // Clear previous data to prevent stale content from showing
+      setSpotlight([]);
+      setEvents([]);
+      setFilteredEvents([]);
+      setActiveIndex(0);
+      
       const today = new Date().toISOString().split('T')[0];
 
       const [spotlightRes, eventsRes] = await Promise.all([
@@ -200,6 +206,11 @@ export default function ExploreEvents() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [spotlight.length, startInterval]);
 
+  // Reset activeIndex when spotlight data changes to prevent stale event flash
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [spotlight]);
+
   function goTo(index: number) {
     if (isTransitioning || index === activeIndex) return;
     setIsTransitioning(true);
@@ -220,7 +231,7 @@ export default function ExploreEvents() {
     filters.availability !== 'all' ? filters.availability : '',
   ].filter(Boolean).length;
 
-  const active = spotlight[activeIndex];
+  const active = spotlight.length > 0 ? spotlight[Math.min(activeIndex, spotlight.length - 1)] : undefined;
   const inputClass = "w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs placeholder-white/20 focus:outline-none focus:border-[#00e5ff]/40 transition-all duration-200";
   const labelClass = "block text-white/30 text-[10px] uppercase tracking-[0.12em] font-semibold mb-1.5";
 
@@ -294,14 +305,14 @@ export default function ExploreEvents() {
               
             </div>
           ) : spotlight.length > 0 && active ? (
-            <div className="mb-16">
+            <div key={`spotlight-${spotlight[0]?.id}`} className="mb-16">
               <Link href={`/events/${active.id}`}>
                 <div
                   className={`relative w-full rounded-2xl overflow-hidden cursor-pointer group transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
                   style={{ height: '310px' }}
                 >
                   {active.banner_image_url ? (
-                    <img src={active.banner_image_url} alt={active.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img key={`banner-${active.id}`} src={active.banner_image_url} alt={active.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   ) : (
                     <div className="absolute inset-0 bg-[#0a0a0a]" />
                   )}
@@ -311,7 +322,7 @@ export default function ExploreEvents() {
                     <div className="flex items-end gap-6 w-full">
                       {active.cover_image_url && (
                         <div className="flex-shrink-0 hidden sm:block">
-                          <img src={active.cover_image_url} alt={active.title} className="w-24 h-24 rounded-xl object-cover border border-white/10 shadow-2xl" />
+                          <img key={`cover-${active.id}`} src={active.cover_image_url} alt={active.title} className="w-24 h-24 rounded-xl object-cover border border-white/10 shadow-2xl" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

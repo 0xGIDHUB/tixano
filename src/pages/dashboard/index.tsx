@@ -38,17 +38,17 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
   useEffect(() => {
     const el = carouselRef.current;
     if (!el) return;
-    
+
     // Measure initial width directly
     const measureWidth = () => {
       if (el.offsetWidth > 0) {
         setContainerWidth(el.offsetWidth);
       }
     };
-    
+
     // Measure immediately
     measureWidth();
-    
+
     // Also set up ResizeObserver for dynamic width changes
     const ro = new ResizeObserver(([entry]) => {
       if (entry.contentRect.width > 0) {
@@ -56,10 +56,10 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
       }
     });
     ro.observe(el);
-    
+
     // Fallback: measure again after a short delay to ensure layout is complete
     const timer = setTimeout(measureWidth, 50);
-    
+
     return () => {
       ro.disconnect();
       clearTimeout(timer);
@@ -138,11 +138,11 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="relative mb-6">
-          <div className="w-20 h-20 rounded-2xl bg-[#0a0a0a] border border-white/8 flex items-center justify-center">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="17" rx="2" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-              <path d="M8 2v3M16 2v3M3 9h18" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
+          <div className="w-16 h-16 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center mb-5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="17" rx="2" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+              <path d="M8 2v3M16 2v3M3 9h18" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
           <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
@@ -478,8 +478,8 @@ export default function Dashboard() {
               {!ticketsLoading && tickets.length === 0 && (
                 <div className="flex flex-col items-center justify-center flex-1 text-center">
                   <div className="relative mb-6">
-                    <div className="w-20 h-20 rounded-2xl bg-[#0a0a0a] border border-white/8 flex items-center justify-center">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                    <div className="w-16 h-16 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                         <path d="M2 9a1 1 0 011-1h18a1 1 0 011 1v2a2 2 0 000 4v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a2 2 0 000-4V9z" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinejoin="round" />
                         <path d="M9 8v8" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2" />
                       </svg>

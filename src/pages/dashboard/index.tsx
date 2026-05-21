@@ -237,22 +237,6 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
           );
         })() : null}
 
-        {activeIndex > 0 && (
-          <button
-            onClick={() => goTo(activeIndex - 1)}
-            className="absolute left-2 z-10 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-white/40 hover:border-[#00e5ff]/40 hover:text-[#00e5ff] transition-all duration-200 backdrop-blur-sm"
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-        )}
-        {activeIndex < events.length - 1 && (
-          <button
-            onClick={() => goTo(activeIndex + 1)}
-            className="absolute right-2 z-10 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-white/40 hover:border-[#00e5ff]/40 hover:text-[#00e5ff] transition-all duration-200 backdrop-blur-sm"
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-        )}
       </div>
 
       {events.length > 1 && (

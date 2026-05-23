@@ -26,6 +26,7 @@ export async function getEmailTransporter() {
       clientId,
       clientSecret,
       refreshToken,
+      accessUrl: 'https://accounts.google.com/o/oauth2/token',
     },
   });
 

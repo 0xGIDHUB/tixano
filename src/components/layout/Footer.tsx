@@ -85,13 +85,40 @@ export default function Footer() {
             TIXANO - {new Date().getFullYear()}
           </p>
           <div className="flex items-center gap-5">
-            <span className="text-white/20 text-xs">
-              Built on Cardano
-            </span>
-            <span className="w-1 h-1 rounded-full bg-white/20" />
-            <span className="text-white/20 text-xs">
-              Powered by MeshJS
-            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 128 128" id="cardano" fill="#D0D0D0">
+              <circle cx="45.9" cy="63.84" r="7.82"></circle>
+              <circle cx="82.1" cy="63.84" r="7.82"></circle>
+              <circle cx="54.95" cy="79.51" r="7.82"></circle>
+              <circle cx="73.05" cy="48.17" r="7.82"></circle>
+              <circle cx="73.05" cy="79.51" r="7.82"></circle>
+              <circle cx="54.95" cy="48.17" r="7.82"></circle>
+              <circle cx="103.98" cy="64" r="4.1"></circle>
+              <circle cx="24.02" cy="64" r="4.1"></circle>
+              <circle cx="9.48" cy="64" r="2.6"></circle>
+              <circle cx="118.52" cy="64" r="2.6"></circle>
+              <circle cx="83.99" cy="29.37" r="4.1"></circle>
+              <circle cx="44.01" cy="98.63" r="4.1"></circle>
+              <circle cx="36.74" cy="111.21" r="2.6"></circle>
+              <circle cx="91.26" cy="16.79" r="2.6"></circle>
+              <circle cx="44.01" cy="29.37" r="4.1"></circle>
+              <circle cx="83.99" cy="98.63" r="4.1"></circle>
+              <circle cx="91.26" cy="111.21" r="2.6"></circle>
+              <circle cx="36.74" cy="16.79" r="2.6"></circle>
+              <circle cx="64" cy="32.71" r="4.72"></circle>
+              <circle cx="64" cy="14.05" r="3.23"></circle>
+              <circle cx="64" cy="95.29" r="4.72"></circle>
+              <circle cx="64" cy="113.95" r="3.23"></circle>
+              <circle cx="36.9" cy="48.36" r="4.72"></circle>
+              <circle cx="20.74" cy="39.02" r="3.23"></circle>
+              <circle cx="91.1" cy="79.64" r="4.72"></circle>
+              <circle cx="107.26" cy="88.98" r="3.23"></circle>
+              <circle cx="36.9" cy="79.64" r="4.72"></circle>
+              <circle cx="20.74" cy="88.98" r="3.23"></circle>
+              <circle cx="91.1" cy="48.36" r="4.72"></circle>
+              <circle cx="107.26" cy="39.02" r="3.23"></circle>
+            </svg>
+
+            <svg width="38" height="38" enableBackground="new 0 0 300 200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" fill="white"><path d="m289 127-45-60-45-60c-.9-1.3-2.4-2-4-2s-3.1.7-4 2l-37 49.3c-2 2.7-6 2.7-8 0l-37-49.3c-.9-1.3-2.4-2-4-2s-3.1.7-4 2l-45 60-45 60c-1.3 1.8-1.3 4.2 0 6l45 60c.9 1.3 2.4 2 4 2s3.1-.7 4-2l37-49.3c2-2.7 6-2.7 8 0l37 49.3c.9 1.3 2.4 2 4 2s3.1-.7 4-2l37-49.3c2-2.7 6-2.7 8 0l37 49.3c.9 1.3 2.4 2 4 2s3.1-.7 4-2l45-60c1.3-1.8 1.3-4.2 0-6zm-90-103.3 32.5 43.3c1.3 1.8 1.3 4.2 0 6l-32.5 43.3c-2 2.7-6 2.7-8 0l-32.5-43.3c-1.3-1.8-1.3-4.2 0-6l32.5-43.3c2-2.7 6-2.7 8 0zm-90 0 32.5 43.3c1.3 1.8 1.3 4.2 0 6l-32.5 43.3c-2 2.7-6 2.7-8 0l-32.5-43.3c-1.3-1.8-1.3-4.2 0-6l32.5-43.3c2-2.7 6-2.7 8 0zm-53 152.6-32.5-43.3c-1.3-1.8-1.3-4.2 0-6l32.5-43.3c2-2.7 6-2.7 8 0l32.5 43.3c1.3 1.8 1.3 4.2 0 6l-32.5 43.3c-2 2.7-6 2.7-8 0zm90 0-32.5-43.3c-1.3-1.8-1.3-4.2 0-6l32.5-43.3c2-2.7 6-2.7 8 0l32.5 43.3c1.3 1.8 1.3 4.2 0 6l-32.5 43.3c-2 2.7-6 2.7-8 0zm90 0-32.5-43.3c-1.3-1.8-1.3-4.2 0-6l32.5-43.3c2-2.7 6-2.7 8 0l32.5 43.3c1.3 1.8 1.3 4.2 0 6l-32.5 43.3c-2 2.7-6 2.7-8 0z" /></svg>
           </div>
         </div>
 

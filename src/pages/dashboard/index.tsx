@@ -6,9 +6,10 @@ import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
 import { ThreeDot } from "react-loading-indicators";
 
-
+// Type definitions for dashboard navigation and ticket display
 type DashboardTab = 'events' | 'tickets';
 
+// Represents a ticket object fetched from the database
 interface Ticket {
   id: string;
   asset_name: string;
@@ -21,20 +22,25 @@ interface Ticket {
   policy_id: string | null;
 }
 
+// Pagination constant: 12 items per page displayed in a 3×4 grid
 const ITEMS_PER_PAGE = 12; // 3 columns × 4 rows
 
+// EventsCarousel: Displays a scrollable carousel of events for the organizer
 function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean }) {
+  // State management for carousel
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Refs for touch interaction and carousel dimensions
   const touchStartX = useRef<number>(0);
   const touchDeltaX = useRef<number>(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const lastWheel = useRef<number>(0);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Fix: use ResizeObserver on the carouselRef so width is always current
+  // Monitor carousel container width changes to ensure proper card sizing and centering
   useEffect(() => {
     const el = carouselRef.current;
     if (!el) return;
@@ -84,6 +90,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     fetchEvents();
   }, [connected, wallet]);
 
+  // Navigate to a specific carousel index with animation guards
   function goTo(index: number) {
     if (isAnimating || index === activeIndex || index < 0 || index >= events.length) return;
     setIsAnimating(true);
@@ -91,6 +98,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     setTimeout(() => setIsAnimating(false), 450);
   }
 
+  // Handle mouse wheel scrolling for carousel navigation
   useEffect(() => {
     const el = carouselRef.current;
     if (!el) return;
@@ -106,6 +114,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     return () => el.removeEventListener('wheel', handleWheel);
   }, [activeIndex, isAnimating, events.length]);
 
+  // Touch handlers for swipe navigation on mobile/tablet devices
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
@@ -118,11 +127,13 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     else if (touchDeltaX.current > 50) goTo(activeIndex - 1);
   }
 
+  // Format date string to readable format
   function formatDate(d: string | null) {
     if (!d) return 'TBA';
     return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
+  // Show loading indicator while fetching events
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -134,6 +145,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     );
   }
 
+  // Show empty state when organizer has no events
   if (events.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -161,9 +173,10 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
     );
   }
 
+  // Render the carousel with navigation controls
   return (
     <div className="flex-1 flex flex-col">
-
+      {/* Carousel counter - shows current position */}
       <div className="flex items-center justify-center mb-2 flex-shrink-0">
         <p className="text-white/20 text-xs font-mono">
           <span className="text-white/60">{String(activeIndex + 1).padStart(2, '0')}</span>
@@ -239,6 +252,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
 
       </div>
 
+      {/* Dot navigation indicators - shows active slide */}
       {events.length > 1 && (
         <div className="flex items-center justify-center gap-2 mt-5 flex-shrink-0">
           {events.map((_, i) => (
@@ -253,11 +267,13 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
   );
 }
 
+// EventCard: Displays individual event information in carousel card format
 function EventCard({ event, active, formatDate }: {
   event: any;
   active?: boolean;
   formatDate: (d: string | null) => string;
 }) {
+  // Calculate event status flags
   const isFull = event.capacity && event.total_registrations >= event.capacity;
   const isPast = event.date && new Date(event.date) < new Date(new Date().toDateString());
 
@@ -267,6 +283,7 @@ function EventCard({ event, active, formatDate }: {
       : 'border-white/2'
       }`}>
       <div className="flex items-stretch gap-0">
+        {/* Event cover image */}
         <div className="relative flex-shrink-0 m-3 rounded-xl overflow-hidden" style={{ width: '160px', height: '160px' }}>
           {event.cover_image_url ? (
             <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
@@ -277,8 +294,10 @@ function EventCard({ event, active, formatDate }: {
           )}
         </div>
 
+        {/* Event details section */}
         <div className="flex-1 min-w-0 flex flex-col justify-between py-4 pr-4">
           <div>
+            {/* Status badges - pricing, past, full indicators */}
             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
               <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${event.pricing === 'free'
                 ? 'text-[#00ff88] border-[#00ff88]/30 bg-[#00ff88]/10'
@@ -302,6 +321,7 @@ function EventCard({ event, active, formatDate }: {
               {event.title}
             </h3>
 
+            {/* Event metadata - date and location */}
             <div className="flex flex-col gap-1.5 text-[11px] text-white/35">
               <div className="flex items-center gap-1.5">
                 <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
@@ -322,6 +342,7 @@ function EventCard({ event, active, formatDate }: {
             </div>
           </div>
 
+          {/* Capacity progress bar */}
           {event.capacity && (
             <div className="mt-3">
               <div className="flex justify-between text-[10px] text-white/20 mb-1">
@@ -342,33 +363,44 @@ function EventCard({ event, active, formatDate }: {
   );
 }
 
+// Main Dashboard component - displays organizer events and user tickets
 export default function Dashboard() {
+  // Wallet and navigation
   const { connected, wallet } = useWallet();
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  
+  // Tab navigation between events and tickets
   const [activeTab, setActiveTab] = useState<DashboardTab>('events');
 
+  // Ticket list state and pagination
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Ticket modal state
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('');
 
+  // Ticket filtering state
   const [statusFilter, setStatusFilter] = useState<'all' | 'unused' | 'used'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Ticket image loading state for modal
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Initialize dashboard with a delay for smoother UX
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
+  // Redirect to home if wallet disconnects
   useEffect(() => {
     if (ready && !connected) router.replace('/');
   }, [ready, connected]);
 
+  // Fetch user's tickets when tab changes or wallet connects
   useEffect(() => {
     if (activeTab !== 'tickets' || !connected || !wallet) return;
 
@@ -395,16 +427,19 @@ export default function Dashboard() {
     fetchTickets();
   }, [activeTab, connected, wallet]);
 
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, searchQuery]);
 
+  // Apply status and search filters to tickets
   const filteredTickets = tickets.filter(ticket => {
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
     const matchesSearch = searchQuery === '' || ticket.asset_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
+  // Calculate pagination for filtered tickets
   const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE);
   const paginatedTickets = filteredTickets.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -439,13 +474,16 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Events Carousel Tab */}
           {activeTab === 'events' && (
             <EventsCarousel wallet={wallet} connected={connected} />
           )}
 
+          {/* Tickets Grid Tab */}
           {activeTab === 'tickets' && (
             <div className="flex-1 min-h-0 flex flex-col">
 
+              {/* Loading skeleton for tickets */}
               {ticketsLoading && (
                 <div className="grid grid-cols-3 gap-4">
                   {Array.from({ length: 12 }).map((_, i) => (
@@ -459,6 +497,7 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Empty state when no tickets exist */}
               {!ticketsLoading && tickets.length === 0 && (
                 <div className="flex flex-col items-center justify-center flex-1 text-center">
                   <div className="relative mb-6">
@@ -488,9 +527,11 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Tickets grid with filters and pagination */}
               {!ticketsLoading && tickets.length > 0 && (
                 <div className="flex flex-col justify-between flex-1">
 
+                  {/* No results state for filtered tickets */}
                   {filteredTickets.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-center py-16">
                       <div className="w-12 h-12 rounded-xl bg-[#0a0a0a] border border-white/8 flex items-center justify-center mb-4">
@@ -501,8 +542,7 @@ export default function Dashboard() {
                       <p className="text-white/30 text-sm font-black uppercase tracking-tight mb-1">No results</p>
                       <p className="text-white/15 text-xs">No tickets match your current filters</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-4 content-start" style={{ minHeight: '272px' }}>
+                  ) : (                    /* Tickets grid display */                    <div className="grid grid-cols-3 gap-4 content-start" style={{ minHeight: '272px' }}>
                       {paginatedTickets.map((ticket) => (
                         <button
                           key={ticket.id}
@@ -562,6 +602,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
+                  {/* Pagination and filters footer */}
                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5 flex-shrink-0 gap-4">
 
                     <span className="text-white/20 text-xs w-36 flex-shrink-0">
@@ -571,7 +612,9 @@ export default function Dashboard() {
                       }
                     </span>
 
+                    {/* Search and filter controls */}
                     <div className="flex items-center gap-2 justify-center" style={{ width: '380px', flexShrink: 0 }}>
+                      {/* Search input */}
                       <div className="relative">
                         <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" width="11" height="11" viewBox="0 0 16 16" fill="none">
                           <path d="M7 13A6 6 0 107 1a6 6 0 000 12zM13 13l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -585,6 +628,7 @@ export default function Dashboard() {
                         />
                       </div>
 
+                      {/* Status filter buttons */}
                       <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-lg p-0.5 gap-0.5">
                         {(['all', 'unused', 'used'] as const).map((s) => (
                           <button
@@ -605,6 +649,7 @@ export default function Dashboard() {
                         ))}
                       </div>
 
+                      {/* Clear filters button */}
                       <button
                         onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
                         className={`text-[11px] flex items-center gap-1 transition-all duration-200 flex-shrink-0 ${statusFilter !== 'all' || searchQuery !== ''
@@ -619,6 +664,7 @@ export default function Dashboard() {
                       </button>
                     </div>
 
+                    {/* Pagination controls */}
                     <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: '130px' }}>
                       {totalPages > 1 && (
                         <>
@@ -666,6 +712,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Ticket detail modal */}
       {selectedTicket && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
@@ -675,6 +722,7 @@ export default function Dashboard() {
             className="w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Ticket NFT image display */}
             {selectedTicket.nft_image_url && (
               <div className="relative w-full flex-shrink-0 overflow-hidden" style={{ height: '220px' }}>
                 {!imageLoaded && (
@@ -689,6 +737,7 @@ export default function Dashboard() {
                   onLoad={() => setImageLoaded(true)}
                   className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
+                {/* Status badge overlay on image */}
                 {imageLoaded && (
                   <div className="absolute top-2 right-2">
                     <span className={`flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border backdrop-blur-sm
@@ -704,12 +753,15 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* Ticket details content */}
             <div className="p-4 flex flex-col gap-3 overflow-y-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+              {/* Event title */}
               <div>
                 <p className="text-white/30 text-[10px] uppercase tracking-widest mb-0.5">Event</p>
                 <p className="text-white font-black uppercase tracking-tight text-sm leading-tight">{eventTitle}</p>
               </div>
 
+              {/* Ticket metadata grid */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-black/40 rounded-xl px-3 py-2">
                   <p className="text-white/25 text-[10px] uppercase tracking-widest mb-0.5">Ticket</p>
@@ -725,6 +777,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Policy ID section */}
               {selectedTicket.policy_id && (
                 <div className="bg-black/40 rounded-xl px-3 py-2">
                   <p className="text-white/25 text-[10px] uppercase tracking-widest mb-0.5">Policy ID</p>
@@ -734,6 +787,7 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Info message about wallet details */}
               <div className="flex items-start gap-2 bg-[#00e5ff]/5 border border-[#00e5ff]/15 rounded-xl px-3 py-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
                   <circle cx="12" cy="12" r="10" stroke="#00e5ff" strokeWidth="1.5" strokeOpacity="0.5" />
@@ -744,6 +798,7 @@ export default function Dashboard() {
                 </p>
               </div>
 
+              {/* Action buttons */}
               <div className="flex gap-2 pt-0.5">
                 <button
                   disabled

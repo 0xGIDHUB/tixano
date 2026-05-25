@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
-import { ThreeDot } from "react-loading-indicators";
+import { FourSquare } from "react-loading-indicators";
 
 // Type definitions for dashboard navigation and ticket display
 type DashboardTab = 'events' | 'tickets';
@@ -26,13 +26,12 @@ interface Ticket {
 const ITEMS_PER_PAGE = 12; // 3 columns × 4 rows
 
 // EventsCarousel: Displays a scrollable carousel of events for the organizer
-function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean }) {
+function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActiveIndex }: { wallet: any; connected: boolean; onEventSelect?: (event: any) => void; activeIndex: number; setActiveIndex: (index: number) => void }) {
   // State management for carousel
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  
+
   // Refs for touch interaction and carousel dimensions
   const touchStartX = useRef<number>(0);
   const touchDeltaX = useRef<number>(0);
@@ -80,7 +79,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
         const addr = await wallet.getChangeAddressBech32();
         const { data } = await supabase
           .from('events')
-          .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id')
+          .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time')
           .eq('organizer_wallet', addr)
           .order('created_at', { ascending: false });
         if (data) setEvents(data);
@@ -137,10 +136,7 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <ThreeDot color="#00e5ff" size="small" text="" textColor="" />
-          <p className="text-white/20 text-xs uppercase tracking-widest">Loading events</p>
-        </div>
+        <FourSquare color="#00e5ff" size="medium" speedPlus={1}/>
       </div>
     );
   }
@@ -235,9 +231,9 @@ function EventsCarousel({ wallet, connected }: { wallet: any; connected: boolean
                     }}
                   >
                     {isActive ? (
-                      <Link href={`/events/${event.id}`} className="block">
+                      <button className="block w-full text-left" onClick={() => onEventSelect?.(event)}>
                         <EventCard event={event} active formatDate={formatDate} />
-                      </Link>
+                      </button>
                     ) : (
                       <button className="w-full text-left" onClick={() => goTo(i)}>
                         <EventCard event={event} formatDate={formatDate} />
@@ -363,13 +359,288 @@ function EventCard({ event, active, formatDate }: {
   );
 }
 
+function EventManagerDashboard({ event, onBack }: { event: any; onBack: () => void }) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
+
+  const formatDate = (d: string | null) => {
+    if (!d) return 'TBA';
+    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  // Live countdown timer
+  useEffect(() => {
+    function calculate() {
+      if (!event.date) return;
+      const eventTime = new Date(`${event.date}T${event.start_time || '00:00:00'}`).getTime();
+      const now = Date.now();
+      const diff = eventTime - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+        isPast: false,
+      });
+    }
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [event.date, event.start_time]);
+
+  const isFull = event.capacity && event.total_registrations >= event.capacity;
+  const isPast = timeLeft.isPast;
+
+  return (
+    <div className="w-full h-full flex flex-col overflow-hidden">
+
+      {/* Back button */}
+      <div className="flex-shrink-0 mb-5">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors duration-200 text-xs font-mono uppercase tracking-widest"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M12 8H4M8 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          My Events
+        </button>
+      </div>
+
+      {/* Top section */}
+      <div className="flex-shrink-0 flex items-start gap-6 mb-6">
+
+        {/* Cover image */}
+        <div className="flex-shrink-0 rounded-2xl overflow-hidden border border-white/10 bg-[#0a0a0a]" style={{ width: '140px', height: '140px' }}>
+          {event.cover_image_url ? (
+            <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#111]">
+              <span className="text-white/10 text-[9px] uppercase tracking-widest">No Image</span>
+            </div>
+          )}
+        </div>
+
+        {/* Title + meta */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between h-[140px]">
+          <div>
+            <h2 className="text-white font-black uppercase tracking-tight text-2xl leading-tight mb-3 line-clamp-2">
+              {event.title}
+            </h2>
+            <div className="flex items-center gap-4 text-xs text-white/40">
+              <div className="flex items-center gap-1.5">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                  <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                <span>{formatDate(event.date)}</span>
+              </div>
+              {event.city && (
+                <div className="flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.75 4.5 8.5 4.5 8.5S12.5 9.75 12.5 6c0-2.49-2.01-4.5-4.5-4.5z" stroke="currentColor" strokeWidth="1.2" />
+                    <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+                  </svg>
+                  <span>{event.city}{event.country ? `, ${event.country}` : ''}</span>
+                </div>
+              )}
+              {event.capacity && (
+                <div className="flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                    <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    <path d="M11 7.5c1.5 0 3 1 3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    <circle cx="11" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2" />
+                  </svg>
+                  <span>{event.total_registrations} / {event.capacity} registered</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Capacity bar */}
+          {event.capacity && (
+            <div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : 'bg-[#00e5ff]'}`}
+                  style={{ width: `${Math.min((event.total_registrations / event.capacity) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-white/20 text-[10px] mt-1">
+                {isFull ? 'Event is at full capacity' : `${event.capacity - event.total_registrations} spots remaining`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Countdown + Check-in CTA */}
+        <div className="flex-shrink-0 flex flex-col gap-3" style={{ width: '260px' }}>
+
+          {/* Countdown */}
+          <div className={`w-full rounded-2xl border px-4 py-3 flex flex-col items-center justify-center ${isPast ? 'border-white/8 bg-[#0a0a0a]' : 'border-[#00e5ff]/15 bg-[#00e5ff]/5'
+            }`} style={{ height: '88px' }}>
+            {isPast ? (
+              <>
+                <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Event Status</p>
+                <p className="text-white/60 text-xl font-black uppercase tracking-widest">Ended</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[#00e5ff]/50 text-[9px] uppercase tracking-widest mb-2">Starts in</p>
+                <div className="flex items-center justify-center gap-3">
+                  {[
+                    { value: timeLeft.days, label: 'Days' },
+                    { value: timeLeft.hours, label: 'Hrs' },
+                    { value: timeLeft.minutes, label: 'Min' },
+                    { value: timeLeft.seconds, label: 'Sec' },
+                  ].map(({ value, label }, i) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="flex flex-col items-center">
+                        <span className="text-white font-black text-xl leading-none tabular-nums w-8 text-center">
+                          {String(value).padStart(2, '0')}
+                        </span>
+                        <span className="text-white/25 text-[8px] uppercase tracking-widest mt-1">{label}</span>
+                      </div>
+                      {i < 3 && <span className="text-[#00e5ff]/30 font-black text-base -mt-2">:</span>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Check-in button */}
+          <button
+            onClick={() => { /* Check-in flow — to be built */ }}
+            disabled={!isPast && !isFull}
+            title={!isPast && !isFull ? 'Check-in opens when the event starts' : 'Start scanning attendee tickets'}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-200 ${isPast || isFull
+              ? 'bg-[#00e5ff] text-black hover:bg-[#33ecff] hover:-translate-y-0.5'
+              : 'bg-[#00e5ff]/10 border border-[#00e5ff]/20 text-[#00e5ff]/50 cursor-not-allowed'
+              }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M4 5.4A1.4 1.4 0 0 1 5.4 4H7a1 1 0 0 0 0-2H5.4A3.4 3.4 0 0 0 2 5.4V7a1 1 0 0 0 2 0V5.4ZM17 2a1 1 0 1 0 0 2h1.6A1.4 1.4 0 0 1 20 5.4V7a1 1 0 1 0 2 0V5.4A3.4 3.4 0 0 0 18.6 2H17ZM4 17a1 1 0 1 0-2 0v1.6A3.4 3.4 0 0 0 5.4 22H7a1 1 0 1 0 0-2H5.4A1.4 1.4 0 0 1 4 18.6V17ZM22 17a1 1 0 1 0-2 0v1.6a1.4 1.4 0 0 1-1.4 1.4H17a1 1 0 1 0 0 2h1.6a3.4 3.4 0 0 0 3.4-3.4V17ZM1 11a1 1 0 1 0 0 2h22a1 1 0 1 0 0-2H1Z"
+                fill={isPast || isFull ? 'black' : 'rgba(0,229,255,0.5)'} />
+            </svg>
+            {isPast || isFull ? 'Check-in' : 'Check-in'}
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* Bottom panels */}
+      <div className="flex-1 min-h-0 grid grid-cols-3 gap-4">
+
+        {/* About */}
+        <div className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-4 flex flex-col min-h-0">
+          <h3 className="text-white/30 text-[10px] uppercase tracking-widest font-semibold mb-3 flex-shrink-0">About</h3>
+          {event.description ? (
+            <p className="text-white/50 text-xs flex-1 leading-relaxed">
+              {event.description.length > 400 ? event.description.substring(0, 400) + '...' : event.description}
+            </p>
+          ) : (
+            <p className="text-white/15 text-xs italic">No description provided.</p>
+          )}
+          <Link
+            href={`/events/${event.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex items-center justify-center gap-2 w-full bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 border border-[#00e5ff]/30 hover:border-[#00e5ff]/60 text-[#00e5ff] text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+              <path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            View Page
+          </Link>
+        </div>
+
+        {/* Details */}
+        <div className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-4 flex flex-col min-h-0">
+          <h3 className="text-white/30 text-[10px] uppercase tracking-widest font-semibold mb-3 flex-shrink-0">Details</h3>
+          <div className="flex flex-col gap-3 flex-1">
+            {[
+              { label: 'Pricing', value: event.pricing === 'free' ? 'Free Entry' : `₳ ${event.ticket_price}` },
+              {
+                label: 'Start Time', value: event.start_time ? (() => {
+                  const [h, m] = event.start_time.split(':');
+                  const hour = parseInt(h);
+                  return `${hour % 12 === 0 ? 12 : hour % 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+                })() : 'TBA'
+              },
+              {
+                label: 'End Time', value: event.end_time ? (() => {
+                  const [h, m] = event.end_time.split(':');
+                  const hour = parseInt(h);
+                  return `${hour % 12 === 0 ? 12 : hour % 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+                })() : 'TBA'
+              },
+              { label: 'Policy ID', value: event.policy_id ? `${event.policy_id.slice(0, 14)}...` : 'N/A', mono: true },
+            ].map(({ label, value, mono }) => (
+              <div key={label}>
+                <p className="text-white/25 text-[9px] uppercase tracking-widest mb-0.5">{label}</p>
+                <p className={`text-white/70 text-xs ${mono ? 'font-mono' : 'font-medium'}`}>{value}</p>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => { /* Edit flow — to be built */ }}
+            className="mt-4 flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+              <path d="M11.5 2.5a1.414 1.414 0 012 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Edit
+          </button>
+        </div>
+
+        {/* Registrations */}
+        <div className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-4 flex flex-col min-h-0">
+          <h3 className="text-white/30 text-[10px] uppercase tracking-widest font-semibold mb-3 flex-shrink-0">Registrations</h3>
+          <div className="grid grid-cols-2 gap-3 flex-1 content-start">
+            {[
+              { label: 'Total', value: event.total_registrations, color: 'text-white' },
+              { label: 'Capacity', value: event.capacity || '∞', color: 'text-white' },
+              { label: 'Remaining', value: event.capacity ? event.capacity - event.total_registrations : '∞', color: isFull ? 'text-red-400' : 'text-[#00ff88]' },
+              { label: 'Fill Rate', value: event.capacity ? `${Math.round((event.total_registrations / event.capacity) * 100)}%` : 'N/A', color: 'text-[#00e5ff]' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-black/30 rounded-xl px-3 py-2.5">
+                <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">{label}</p>
+                <p className={`${color} text-lg font-black tabular-nums`}>{value}</p>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => { /* Guests list — to be built */ }}
+            className="mt-4 flex items-center justify-center gap-2 w-full bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 border border-[#00e5ff]/30 hover:border-[#00e5ff]/60 text-[#00e5ff] text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
+          >
+            View Guests
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // Main Dashboard component - displays organizer events and user tickets
 export default function Dashboard() {
   // Wallet and navigation
   const { connected, wallet } = useWallet();
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  
+
   // Tab navigation between events and tickets
   const [activeTab, setActiveTab] = useState<DashboardTab>('events');
 
@@ -388,6 +659,12 @@ export default function Dashboard() {
 
   // Ticket image loading state for modal
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Event detail view state
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState<any | null>(null);
+
+  // Carousel state to persist position when navigating back
+  const [carouselActiveIndex, setCarouselActiveIndex] = useState(0);
 
   // Initialize dashboard with a delay for smoother UX
   useEffect(() => {
@@ -452,263 +729,268 @@ export default function Dashboard() {
         <title>Dashboard — Tixano</title>
       </Head>
 
-      <div className="h-[calc(100vh-80px)] bg-black px-6 py-8 overflow-hidden">
-        <div className="max-w-6xl mx-auto h-full flex flex-col">
+      <div className="fixed inset-0 top-[80px] bg-black overflow-hidden">
+        <div className="w-full h-full flex flex-col px-6 py-8">
 
-          <div className="flex items-start justify-between mb-10 flex-shrink-0">
-            <h1 className="text-white/90 text-2xl font-black uppercase tracking-tight">
-              {activeTab === 'events' ? 'My Events' : 'My Tickets'}
-            </h1>
+          {selectedEventForDetail ? (
+            <EventManagerDashboard event={selectedEventForDetail} onBack={() => setSelectedEventForDetail(null)} />
+          ) : (
+            <>
+              <div className="flex items-start justify-between mb-10 flex-shrink-0">
+                <h1 className="text-white/90 text-2xl font-black uppercase tracking-tight">
+                  {activeTab === 'events' ? 'My Events' : 'My Tickets'}
+                </h1>
 
-            <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-xl p-1 gap-1">
-              {(['events', 'tickets'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200
-                    ${activeTab === tab ? 'bg-[#00e5ff] text-black' : 'text-white/40 hover:text-white/70'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Events Carousel Tab */}
-          {activeTab === 'events' && (
-            <EventsCarousel wallet={wallet} connected={connected} />
-          )}
-
-          {/* Tickets Grid Tab */}
-          {activeTab === 'tickets' && (
-            <div className="flex-1 min-h-0 flex flex-col">
-
-              {/* Loading skeleton for tickets */}
-              {ticketsLoading && (
-                <div className="grid grid-cols-3 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="flex flex-col bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden animate-pulse">
-                      <div className="px-2 py-4 flex flex-col gap-2 items-center">
-                        <div className="h-6 bg-white/5 rounded w-4/5" />
-                        <div className="h-2 bg-white/5 rounded w-2/5" />
-                      </div>
-                    </div>
+                <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-xl p-1 gap-1">
+                  {(['events', 'tickets'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200
+                        ${activeTab === tab ? 'bg-[#00e5ff] text-black' : 'text-white/40 hover:text-white/70'}`}
+                    >
+                      {tab}
+                    </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Events Carousel Tab */}
+              {activeTab === 'events' && (
+                <EventsCarousel wallet={wallet} connected={connected} onEventSelect={setSelectedEventForDetail} activeIndex={carouselActiveIndex} setActiveIndex={setCarouselActiveIndex} />
               )}
 
-              {/* Empty state when no tickets exist */}
-              {!ticketsLoading && tickets.length === 0 && (
-                <div className="flex flex-col items-center justify-center flex-1 text-center">
-                  <div className="relative mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                        <path d="M2 9a1 1 0 011-1h18a1 1 0 011 1v2a2 2 0 000 4v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a2 2 0 000-4V9z" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinejoin="round" />
-                        <path d="M9 8v8" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2" />
-                      </svg>
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
-                      <span className="text-white/20 text-[9px] font-black">0</span>
-                    </div>
-                  </div>
-                  <p className="text-white/50 text-base font-black uppercase tracking-tight mb-2">No Tickets Yet</p>
-                  <p className="text-white/20 text-sm max-w-xs leading-relaxed mb-8">
-                    You haven't registered for any events. Explore upcoming events and mint your first NFT ticket.
-                  </p>
-                  <Link
-                    href="/events"
-                    className="inline-flex items-center gap-2 bg-[#00e5ff] text-black text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                      <path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Explore Events
-                  </Link>
-                </div>
-              )}
+              {/* Tickets Grid Tab */}
+              {activeTab === 'tickets' && (
+                <div className="flex-1 min-h-0 flex flex-col">
 
-              {/* Tickets grid with filters and pagination */}
-              {!ticketsLoading && tickets.length > 0 && (
-                <div className="flex flex-col justify-between flex-1">
-
-                  {/* No results state for filtered tickets */}
-                  {filteredTickets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 text-center py-16">
-                      <div className="w-12 h-12 rounded-xl bg-[#0a0a0a] border border-white/8 flex items-center justify-center mb-4">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                      </div>
-                      <p className="text-white/30 text-sm font-black uppercase tracking-tight mb-1">No results</p>
-                      <p className="text-white/15 text-xs">No tickets match your current filters</p>
-                    </div>
-                  ) : (                    /* Tickets grid display */                    <div className="grid grid-cols-3 gap-4 content-start" style={{ minHeight: '272px' }}>
-                      {paginatedTickets.map((ticket) => (
-                        <button
-                          key={ticket.id}
-                          onClick={async () => {
-                            setImageLoaded(false);
-                            const { data: eventData } = await supabase
-                              .from('events')
-                              .select('title')
-                              .eq('id', ticket.event_id)
-                              .single();
-                            setEventTitle(eventData?.title || 'Unknown Event');
-                            setSelectedTicket(ticket);
-                          }}
-                          className="group relative transition-all duration-200 hover:-translate-y-1"
-                        >
-                          <svg
-                            className="absolute inset-0 w-full h-full"
-                            viewBox="0 0 200 72"
-                            preserveAspectRatio="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M8,0 H192 Q200,0 200,8 V30 A8,8 0 0,1 200,42 V64 Q200,72 192,72 H8 Q0,72 0,64 V42 A8,8 0 0,1 0,30 V8 Q0,0 8,0 Z"
-                              fill="#0a0a0a"
-                              stroke="rgba(255,255,255,0.08)"
-                              strokeWidth="1"
-                              vectorEffect="non-scaling-stroke"
-                              className="transition-colors duration-300 group-hover:fill-[#0c1a1a]"
-                            />
-                          </svg>
-                          <svg
-                            className="absolute inset-0 w-full h-full transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                            viewBox="0 0 200 72"
-                            preserveAspectRatio="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M8,0 H192 Q200,0 200,8 V30 A8,8 0 0,1 200,42 V64 Q200,72 192,72 H8 Q0,72 0,64 V42 A8,8 0 0,1 0,30 V8 Q0,0 8,0 Z"
-                              fill="none"
-                              stroke="#00e5ff"
-                              strokeWidth="5"
-                              strokeOpacity="0.35"
-                              vectorEffect="non-scaling-stroke"
-                            />
-                          </svg>
-                          <div className="relative flex flex-col items-center justify-center text-center" style={{ height: '72px' }}>
-                            <p className="text-white/60 text-[11px] font-mono w-full px-4 truncate group-hover:text-[#00e5ff] transition-colors duration-300">
-                              {ticket.asset_name}
-                            </p>
-                            <div className="flex items-center justify-center gap-1.5 mt-1">
-                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ticket.status === 'used' ? 'bg-red-400' : 'bg-[#00ff88]'}`} />
-                              <span className="text-white/25 text-[10px] uppercase tracking-widest">{ticket.status}</span>
-                            </div>
+                  {/* Loading skeleton for tickets */}
+                  {ticketsLoading && (
+                    <div className="grid grid-cols-3 gap-4">
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <div key={i} className="flex flex-col bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden animate-pulse">
+                          <div className="px-2 py-4 flex flex-col gap-2 items-center">
+                            <div className="h-6 bg-white/5 rounded w-4/5" />
+                            <div className="h-2 bg-white/5 rounded w-2/5" />
                           </div>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Pagination and filters footer */}
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5 flex-shrink-0 gap-4">
-
-                    <span className="text-white/20 text-xs w-36 flex-shrink-0">
-                      {filteredTickets.length === tickets.length
-                        ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)} of ${tickets.length} tickets`
-                        : `${filteredTickets.length} of ${tickets.length} tickets`
-                      }
-                    </span>
-
-                    {/* Search and filter controls */}
-                    <div className="flex items-center gap-2 justify-center" style={{ width: '380px', flexShrink: 0 }}>
-                      {/* Search input */}
-                      <div className="relative">
-                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" width="11" height="11" viewBox="0 0 16 16" fill="none">
-                          <path d="M7 13A6 6 0 107 1a6 6 0 000 12zM13 13l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        <input
-                          type="text"
-                          placeholder="Search tickets..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="bg-[#0a0a0a] border border-white/10 rounded-lg pl-7 pr-3 py-1.5 text-white text-[11px] placeholder-white/20 focus:outline-none focus:border-[#00e5ff]/40 w-36 transition-all duration-200"
-                        />
+                  {/* Empty state when no tickets exist */}
+                  {!ticketsLoading && tickets.length === 0 && (
+                    <div className="flex flex-col items-center justify-center flex-1 text-center">
+                      <div className="relative mb-6">
+                        <div className="w-16 h-16 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <path d="M2 9a1 1 0 011-1h18a1 1 0 011 1v2a2 2 0 000 4v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a2 2 0 000-4V9z" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinejoin="round" />
+                            <path d="M9 8v8" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2" />
+                          </svg>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center">
+                          <span className="text-white/20 text-[9px] font-black">0</span>
+                        </div>
                       </div>
+                      <p className="text-white/50 text-base font-black uppercase tracking-tight mb-2">No Tickets Yet</p>
+                      <p className="text-white/20 text-sm max-w-xs leading-relaxed mb-8">
+                        You haven't registered for any events. Explore upcoming events and mint your first NFT ticket.
+                      </p>
+                      <Link
+                        href="/events"
+                        className="inline-flex items-center gap-2 bg-[#00e5ff] text-black text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                          <path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Explore Events
+                      </Link>
+                    </div>
+                  )}
 
-                      {/* Status filter buttons */}
-                      <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-lg p-0.5 gap-0.5">
-                        {(['all', 'unused', 'used'] as const).map((s) => (
+                  {/* Tickets grid with filters and pagination */}
+                  {!ticketsLoading && tickets.length > 0 && (
+                    <div className="flex flex-col justify-between flex-1">
+
+                      {/* No results state for filtered tickets */}
+                      {filteredTickets.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-1 text-center py-16">
+                          <div className="w-12 h-12 rounded-xl bg-[#0a0a0a] border border-white/8 flex items-center justify-center mb-4">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                          </div>
+                          <p className="text-white/30 text-sm font-black uppercase tracking-tight mb-1">No results</p>
+                          <p className="text-white/15 text-xs">No tickets match your current filters</p>
+                        </div>
+                      ) : (                    /* Tickets grid display */                    <div className="grid grid-cols-3 gap-4 content-start" style={{ minHeight: '272px' }}>
+                        {paginatedTickets.map((ticket) => (
                           <button
-                            key={s}
-                            onClick={() => setStatusFilter(s)}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all duration-150
-                              ${statusFilter === s
-                                ? s === 'used'
-                                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                  : s === 'unused'
-                                    ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/25'
-                                    : 'bg-white/10 text-white/70 border border-white/15'
-                                : 'text-white/30 hover:text-white/50'
-                              }`}
+                            key={ticket.id}
+                            onClick={async () => {
+                              setImageLoaded(false);
+                              const { data: eventData } = await supabase
+                                .from('events')
+                                .select('title')
+                                .eq('id', ticket.event_id)
+                                .single();
+                              setEventTitle(eventData?.title || 'Unknown Event');
+                              setSelectedTicket(ticket);
+                            }}
+                            className="group relative transition-all duration-200 hover:-translate-y-1"
                           >
-                            {s}
+                            <svg
+                              className="absolute inset-0 w-full h-full"
+                              viewBox="0 0 200 72"
+                              preserveAspectRatio="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M8,0 H192 Q200,0 200,8 V30 A8,8 0 0,1 200,42 V64 Q200,72 192,72 H8 Q0,72 0,64 V42 A8,8 0 0,1 0,30 V8 Q0,0 8,0 Z"
+                                fill="#0a0a0a"
+                                stroke="rgba(255,255,255,0.08)"
+                                strokeWidth="1"
+                                vectorEffect="non-scaling-stroke"
+                                className="transition-colors duration-300 group-hover:fill-[#0c1a1a]"
+                              />
+                            </svg>
+                            <svg
+                              className="absolute inset-0 w-full h-full transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                              viewBox="0 0 200 72"
+                              preserveAspectRatio="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M8,0 H192 Q200,0 200,8 V30 A8,8 0 0,1 200,42 V64 Q200,72 192,72 H8 Q0,72 0,64 V42 A8,8 0 0,1 0,30 V8 Q0,0 8,0 Z"
+                                fill="none"
+                                stroke="#00e5ff"
+                                strokeWidth="5"
+                                strokeOpacity="0.35"
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            </svg>
+                            <div className="relative flex flex-col items-center justify-center text-center" style={{ height: '72px' }}>
+                              <p className="text-white/60 text-[11px] font-mono w-full px-4 truncate group-hover:text-[#00e5ff] transition-colors duration-300">
+                                {ticket.asset_name}
+                              </p>
+                              <div className="flex items-center justify-center gap-1.5 mt-1">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ticket.status === 'used' ? 'bg-red-400' : 'bg-[#00ff88]'}`} />
+                                <span className="text-white/25 text-[10px] uppercase tracking-widest">{ticket.status}</span>
+                              </div>
+                            </div>
                           </button>
                         ))}
                       </div>
-
-                      {/* Clear filters button */}
-                      <button
-                        onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
-                        className={`text-[11px] flex items-center gap-1 transition-all duration-200 flex-shrink-0 ${statusFilter !== 'all' || searchQuery !== ''
-                          ? 'text-white/20 hover:text-[#00e5ff] opacity-100 pointer-events-auto'
-                          : 'opacity-0 pointer-events-none'
-                          }`}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        Clear
-                      </button>
-                    </div>
-
-                    {/* Pagination controls */}
-                    <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: '130px' }}>
-                      {totalPages > 1 && (
-                        <>
-                          <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
-                          >
-                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                              <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <button
-                              key={page}
-                              onClick={() => setCurrentPage(page)}
-                              className={`w-7 h-7 rounded-lg border text-[11px] font-bold transition-all duration-200 ${page === currentPage
-                                ? 'bg-[#00e5ff] border-[#00e5ff] text-black'
-                                : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/70'
-                                }`}
-                            >
-                              {page}
-                            </button>
-                          ))}
-                          <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
-                          >
-                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                              <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                        </>
                       )}
-                    </div>
 
-                  </div>
+                      {/* Pagination and filters footer */}
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5 flex-shrink-0 gap-4">
+
+                        <span className="text-white/20 text-xs w-36 flex-shrink-0">
+                          {filteredTickets.length === tickets.length
+                            ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)} of ${tickets.length} tickets`
+                            : `${filteredTickets.length} of ${tickets.length} tickets`
+                          }
+                        </span>
+
+                        {/* Search and filter controls */}
+                        <div className="flex items-center gap-2 justify-center" style={{ width: '380px', flexShrink: 0 }}>
+                          {/* Search input */}
+                          <div className="relative">
+                            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" width="11" height="11" viewBox="0 0 16 16" fill="none">
+                              <path d="M7 13A6 6 0 107 1a6 6 0 000 12zM13 13l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            <input
+                              type="text"
+                              placeholder="Search tickets..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="bg-[#0a0a0a] border border-white/10 rounded-lg pl-7 pr-3 py-1.5 text-white text-[11px] placeholder-white/20 focus:outline-none focus:border-[#00e5ff]/40 w-36 transition-all duration-200"
+                            />
+                          </div>
+
+                          {/* Status filter buttons */}
+                          <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-lg p-0.5 gap-0.5">
+                            {(['all', 'unused', 'used'] as const).map((s) => (
+                              <button
+                                key={s}
+                                onClick={() => setStatusFilter(s)}
+                                className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all duration-150
+                              ${statusFilter === s
+                                    ? s === 'used'
+                                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                      : s === 'unused'
+                                        ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/25'
+                                        : 'bg-white/10 text-white/70 border border-white/15'
+                                    : 'text-white/30 hover:text-white/50'
+                                  }`}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Clear filters button */}
+                          <button
+                            onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
+                            className={`text-[11px] flex items-center gap-1 transition-all duration-200 flex-shrink-0 ${statusFilter !== 'all' || searchQuery !== ''
+                              ? 'text-white/20 hover:text-[#00e5ff] opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none'
+                              }`}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                              <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            Clear
+                          </button>
+                        </div>
+
+                        {/* Pagination controls */}
+                        <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: '130px' }}>
+                          {totalPages > 1 && (
+                            <>
+                              <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                  <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`w-7 h-7 rounded-lg border text-[11px] font-bold transition-all duration-200 ${page === currentPage
+                                    ? 'bg-[#00e5ff] border-[#00e5ff] text-black'
+                                    : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/70'
+                                    }`}
+                                >
+                                  {page}
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
-
-            </div>
+            </>
           )}
-
         </div>
       </div>
 

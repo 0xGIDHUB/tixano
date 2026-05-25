@@ -136,7 +136,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <FourSquare color="#00e5ff" size="medium" speedPlus={1}/>
+        <FourSquare color="#00e5ff" size="medium" speedPlus={1} />
       </div>
     );
   }
@@ -193,10 +193,10 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
           // Active card takes ~55% of width, adjacent cards are smaller
           const CARD_W = Math.min(400, Math.floor(measuredWidth * 0.55));
           const ADJACENT_SCALE = 0.70;
-          const GAP = 24;
+          const GAP = 24; // space between cards
           const centerX = measuredWidth / 2;
           // Calculate offset to center the active card - account for padding by adding it to the offset
-          const PADDING_OFFSET = 177; // px-10 = 40px, ResizeObserver measures content box
+          const PADDING_OFFSET = 215; // px-10 = 40px, ResizeObserver measures content box
           const trackOffset = centerX - CARD_W / 2 - activeIndex * (CARD_W + GAP) + PADDING_OFFSET;
 
           return (
@@ -359,8 +359,268 @@ function EventCard({ event, active, formatDate }: {
   );
 }
 
-function EventManagerDashboard({ event, onBack }: { event: any; onBack: () => void }) {
+function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
+  event: any;
+  onClose: () => void;
+  onSaved: (updated: any) => void;
+  onEventUpdated?: (updated: any) => void;
+}) {
+  const [form, setForm] = useState({
+    description: event.description || '',
+    date: event.date || '',
+    registration_deadline: event.registration_deadline || '',
+    start_time: event.start_time ? event.start_time.slice(0, 5) : '',
+    end_time: event.end_time ? event.end_time.slice(0, 5) : '',
+    city: event.city || '',
+    country: event.country || '',
+    address: event.address || '',
+    organizer_name: event.organizer_name || '',
+    organizer_link: event.organizer_link || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  // Slide in on mount
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Sync form state with event prop changes
+  useEffect(() => {
+    setForm({
+      description: event.description || '',
+      date: event.date || '',
+      registration_deadline: event.registration_deadline || '',
+      start_time: event.start_time ? event.start_time.slice(0, 5) : '',
+      end_time: event.end_time ? event.end_time.slice(0, 5) : '',
+      city: event.city || '',
+      country: event.country || '',
+      address: event.address || '',
+      organizer_name: event.organizer_name || '',
+      organizer_link: event.organizer_link || '',
+    });
+  }, [event]);
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 350);
+  }
+
+  function set(key: string, value: string) {
+    setForm(f => ({ ...f, [key]: value }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('events')
+        .update({
+          description: form.description || null,
+          date: form.date || null,
+          registration_deadline: form.registration_deadline || null,
+          start_time: form.start_time || null,
+          end_time: form.end_time || null,
+          city: form.city || null,
+          country: form.country || null,
+          address: form.address || null,
+          organizer_name: form.organizer_name || null,
+          organizer_link: form.organizer_link || null,
+        })
+        .eq('id', event.id)
+        .select()
+        .single();
+
+      if (err) throw err;
+      onSaved(data);
+      onEventUpdated?.(data);
+      handleClose();
+    } catch (e: any) {
+      setError(e.message || 'Failed to save changes.');
+    }
+    setSaving(false);
+  }
+
+  const inputClass = "w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs placeholder-white/25 focus:outline-none focus:border-[#00e5ff]/50 focus:ring-1 focus:ring-[#00e5ff]/20 transition-all duration-200";
+  const labelClass = "text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2 block";
+
+  return (
+    <div className="fixed inset-0 z-50 flex" onClick={handleClose}>
+
+      {/* Backdrop */}
+      <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-350 ${visible ? 'opacity-100' : 'opacity-0'}`} />
+
+      {/* Floating Form - slides from left */}
+      <div
+        className={`fixed left-6 top-[100px] h-[calc(100vh-120px)] w-[520px] bg-[#0a0a0a] border border-white/20 rounded-2xl flex flex-col z-50 shadow-2xl transition-transform duration-350 ease-[cubic-bezier(0.4,0,0.2,1)] ${visible ? 'translate-x-0' : '-translate-x-full'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-white/20 flex-shrink-0 flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-[#00e5ff] text-[10px] uppercase tracking-widest font-bold mb-1">Edit Event</p>
+            <h2 className="text-white font-black uppercase tracking-tight text-lg line-clamp-2">{event.title}</h2>
+          </div>
+        </div>
+
+        {/* Scrollable form */}
+        <div className="flex-1 overflow-y-auto px-6 py-5" style={{ scrollbarWidth: 'none' }}>
+          <div className="space-y-6">
+            {/* Description Section */}
+            <div>
+              <label className={labelClass}>Event Description</label>
+              <textarea
+                value={form.description}
+                onChange={e => set('description', e.target.value)}
+                rows={4}
+                placeholder="Describe your event in detail..."
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+
+            {/* Schedule Section */}
+            <div>
+              <h3 className="text-white/60 text-[11px] uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                Schedule
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Event Date</label>
+                    <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+                      className={inputClass} style={{ colorScheme: 'dark' }} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Registration Deadline</label>
+                    <input type="date" value={form.registration_deadline} onChange={e => set('registration_deadline', e.target.value)}
+                      className={inputClass} style={{ colorScheme: 'dark' }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Start Time</label>
+                    <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)}
+                      className={inputClass} style={{ colorScheme: 'dark' }} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>End Time</label>
+                    <input type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)}
+                      className={inputClass} style={{ colorScheme: 'dark' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Location Section */}
+            <div>
+              <h3 className="text-white/60 text-[11px] uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.75 4.5 8.5 4.5 8.5S12.5 9.75 12.5 6c0-2.49-2.01-4.5-4.5-4.5z" stroke="currentColor" strokeWidth="1.2" />
+                  <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+                </svg>
+                Location
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>City</label>
+                    <input type="text" value={form.city} onChange={e => set('city', e.target.value)}
+                      placeholder="Amsterdam" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Country</label>
+                    <input type="text" value={form.country} onChange={e => set('country', e.target.value)}
+                      placeholder="Netherlands" className={inputClass} />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Address</label>
+                  <input type="text" value={form.address} onChange={e => set('address', e.target.value)}
+                    placeholder="Street address or venue name" className={inputClass} />
+                </div>
+              </div>
+            </div>
+
+            {/* Organiser Section */}
+            <div>
+              <h3 className="text-white/60 text-[11px] uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                Organiser
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className={labelClass}>Organiser Name</label>
+                  <input type="text" value={form.organizer_name} onChange={e => set('organizer_name', e.target.value)}
+                    placeholder="Your name or organisation" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Organiser Link</label>
+                  <input type="url" value={form.organizer_link} onChange={e => set('organizer_link', e.target.value)}
+                    placeholder="https://example.com" className={inputClass} />
+                </div>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-3">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                  <circle cx="8" cy="8" r="6" stroke="rgb(248,113,113)" strokeWidth="1.2" />
+                  <path d="M8 5v3M8 10h.01" stroke="rgb(248,113,113)" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                <p className="text-red-400 text-[11px] leading-relaxed">{error}</p>
+              </div>
+            )}
+
+            {/* Bottom padding */}
+            <div className="h-2" />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-white/20 flex-shrink-0 flex gap-2">
+          <button
+            onClick={handleClose}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/70 hover:text-white text-xs font-bold uppercase tracking-widest transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-[#00e5ff] text-black text-xs font-black uppercase tracking-widest hover:bg-[#33ecff] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {saving ? (
+              <>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-black/20 border-t-black animate-spin" />
+                Saving
+              </>
+            ) : (
+              <>
+                Save
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
+  const [showEdit, setShowEdit] = useState(false);
+  const [eventData, setEventData] = useState(event);
 
   const formatDate = (d: string | null) => {
     if (!d) return 'TBA';
@@ -592,7 +852,7 @@ function EventManagerDashboard({ event, onBack }: { event: any; onBack: () => vo
             ))}
           </div>
           <button
-            onClick={() => { /* Edit flow — to be built */ }}
+            onClick={() => setShowEdit(true)}
             className="mt-4 flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
           >
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
@@ -630,6 +890,18 @@ function EventManagerDashboard({ event, onBack }: { event: any; onBack: () => vo
         </div>
 
       </div>
+
+      {showEdit && (
+        <EditEventModal
+          event={eventData}
+          onClose={() => setShowEdit(false)}
+          onSaved={(updated) => setEventData(updated)}
+          onEventUpdated={(updated) => {
+            setEventData(updated);
+            onEventUpdated?.(updated);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -733,7 +1005,7 @@ export default function Dashboard() {
         <div className="w-full h-full flex flex-col px-6 py-8">
 
           {selectedEventForDetail ? (
-            <EventManagerDashboard event={selectedEventForDetail} onBack={() => setSelectedEventForDetail(null)} />
+            <EventManagerDashboard event={selectedEventForDetail} onBack={() => setSelectedEventForDetail(null)} onEventUpdated={(updated) => setSelectedEventForDetail(updated)} />
           ) : (
             <>
               <div className="flex items-start justify-between mb-10 flex-shrink-0">

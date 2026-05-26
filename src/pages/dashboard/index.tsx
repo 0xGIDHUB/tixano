@@ -174,7 +174,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     <div className="flex-1 flex flex-col">
       {/* Carousel counter - shows current position */}
       <div className="flex items-center justify-center mb-2 flex-shrink-0">
-        <p className="text-white/20 text-xs font-mono">
+        <p className="text-white/20 text-sm font-mono">
           <span className="text-white/60">{String(activeIndex + 1).padStart(2, '0')}</span>
           <span> / {String(events.length).padStart(2, '0')}</span>
         </p>
@@ -454,7 +454,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
               </svg>
             </div>
             <div>
-              <p className="text-[#00e5ff]/60 text-[9px] uppercase tracking-widest">Edit Unlock Fee</p>
+              <p className="text-[#00e5ff]/60 text-[9px] uppercase tracking-widest">Edit Event</p>
               <h3 className="text-white font-black uppercase tracking-tight text-sm">Confirm Payment</h3>
             </div>
           </div>
@@ -466,7 +466,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
           {/* Fee breakdown */}
           <div className="bg-black/40 border border-white/6 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-              <span className="text-white/40 text-xs">Edit unlock fee</span>
+              <span className="text-white/40 text-xs">Edit event fee</span>
               <span className="text-white font-black text-sm">₳ 5.00</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
@@ -1448,37 +1448,61 @@ export default function Dashboard() {
                         </div>
 
                         {/* Pagination controls */}
-                        <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: '130px' }}>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           {totalPages > 1 && (
                             <>
+                              {/* First button */}
+                              <button
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                                title="First page"
+                                className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                  <path d="M6 4l-4 4 4 4M12 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+
+                              {/* Previous button */}
                               <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
+                                title="Previous page"
                                 className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
                               >
                                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                                   <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
-                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                <button
-                                  key={page}
-                                  onClick={() => setCurrentPage(page)}
-                                  className={`w-7 h-7 rounded-lg border text-[11px] font-bold transition-all duration-200 ${page === currentPage
-                                    ? 'bg-[#00e5ff] border-[#00e5ff] text-black'
-                                    : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/70'
-                                    }`}
-                                >
-                                  {page}
-                                </button>
-                              ))}
+
+                              {/* Page indicator */}
+                              <div className="px-3 py-1 rounded-lg border border-white/10 bg-white/5">
+                                <p className="text-white/60 text-xs font-medium">
+                                  Page <span className="text-[#00e5ff] font-bold">{currentPage}</span> of <span className="text-white/80 font-bold">{totalPages}</span>
+                                </p>
+                              </div>
+
+                              {/* Next button */}
                               <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
+                                title="Next page"
                                 className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
                               >
                                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                                   <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+
+                              {/* Last button */}
+                              <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                                title="Last page"
+                                className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                  <path d="M10 4l4 4-4 4M4 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
                             </>

@@ -284,7 +284,6 @@ export default function EventDetail() {
                 eventUuid: event.id,
                 eventAlias: event.event_alias,
                 eventTitle: event.title,
-                eventDate: event.date ?? '',
                 eventPricing: event.pricing as 'free' | 'paid',
                 ticketUuid,
                 ticketOwnerName: regForm.fullName,

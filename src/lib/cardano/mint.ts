@@ -131,7 +131,6 @@ export async function buildMintAttendeeTicketTx({
   eventUuid,
   eventAlias,
   eventTitle,
-  eventDate,
   eventPricing,
   ticketUuid,
   ticketOwnerName,
@@ -142,7 +141,6 @@ export async function buildMintAttendeeTicketTx({
   eventUuid: string;
   eventAlias: string;
   eventTitle: string;
-  eventDate: string;
   eventPricing: 'free' | 'paid';
   ticketUuid: string;
   ticketOwnerName: string;
@@ -197,7 +195,6 @@ export async function buildMintAttendeeTicketTx({
           description: splitMetadataString(eventTitle),
           type: 'AttendeeTicket',
           event_id: splitMetadataString(eventUuid),
-          event_date: eventDate,
           ticket_id: splitMetadataString(ticketUuid),
           ticket_owner: ticketOwnerName,
           platform: 'Tixano',

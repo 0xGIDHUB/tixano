@@ -369,7 +369,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
 
-  const EDIT_FEE_LOVELACE = process.env.NEXT_PUBLIC_EDIT_EVENT_FEE!; // 5 ADA
+  const EDIT_FEE_LOVELACE = "5000000"; // 5 ADA
   const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS!;
 
   useEffect(() => {
@@ -411,20 +411,17 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
       setStatus('confirming');
       const txHash = await wallet.submitTx(signedTx);
 
-      // Poll for confirmation (up to 60s)
-      let confirmed = false;
-      for (let i = 0; i < 20; i++) {
-        await new Promise(r => setTimeout(r, 5000));
-        try {
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_BLOCKFROST_KEY?.startsWith('preprod') ? 'https://cardano-preprod' : 'https://cardano-mainnet'}.blockfrost.io/api/v0/txs/${txHash}`,
-            { headers: { project_id: process.env.NEXT_PUBLIC_BLOCKFROST_KEY! } }
-          );
-          if (res.ok) { confirmed = true; break; }
-        } catch { }
-      }
+      // Call backend to confirm transaction and validate payment
+      const confirmRes = await fetch('/api/transactions/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ txHash }),
+      });
 
-      if (!confirmed) throw new Error('Transaction not confirmed in time. Please try again.');
+      if (!confirmRes.ok) {
+        const data = await confirmRes.json();
+        throw new Error(data.error || 'Transaction confirmation failed');
+      }
 
       setStatus('done');
       setTimeout(() => {

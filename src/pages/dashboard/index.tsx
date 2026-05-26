@@ -79,7 +79,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
         const addr = await wallet.getChangeAddressBech32();
         const { data } = await supabase
           .from('events')
-          .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time')
+          .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time, registration_deadline, address, organizer_name, organizer_link')
           .eq('organizer_wallet', addr)
           .order('created_at', { ascending: false });
         if (data) setEvents(data);
@@ -359,6 +359,202 @@ function EventCard({ event, active, formatDate }: {
   );
 }
 
+function EditPaymentGate({ event, onPaid, onCancel }: {
+  event: any;
+  onPaid: () => void;
+  onCancel: () => void;
+}) {
+  const { wallet } = useWallet();
+  const [status, setStatus] = useState<'idle' | 'signing' | 'confirming' | 'done' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  const EDIT_FEE_LOVELACE = process.env.NEXT_PUBLIC_EDIT_EVENT_FEE!; // 5 ADA
+  const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS!;
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  function handleCancel() {
+    setVisible(false);
+    setTimeout(onCancel, 300);
+  }
+
+  async function handlePay() {
+    setStatus('signing');
+    setErrorMsg(null);
+    try {
+      const { BlockfrostProvider, MeshTxBuilder, deserializeAddress } = await import('@meshsdk/core');
+      const provider = new BlockfrostProvider(process.env.NEXT_PUBLIC_BLOCKFROST_KEY!);
+      const walletAddress = await wallet.getChangeAddressBech32();
+      const utxos = await wallet.getUtxosMesh();
+      const { pubKeyHash } = deserializeAddress(walletAddress);
+
+      const txBuilder = new MeshTxBuilder({ fetcher: provider, submitter: provider, verbose: false });
+
+      const unsignedTx = await txBuilder
+        .txOut(ADMIN_ADDRESS, [{ unit: 'lovelace', quantity: EDIT_FEE_LOVELACE }])
+        .metadataValue(674, {
+          msg: ['Tixano Event Edit Fee'],
+          event_id: event.id,
+          event_title: event.title.slice(0, 64),
+        })
+        .requiredSignerHash(pubKeyHash)
+        .changeAddress(walletAddress)
+        .selectUtxosFrom(utxos)
+        .complete();
+
+      const signedTx = await wallet.signTxReturnFullTx(unsignedTx, true);
+
+      setStatus('confirming');
+      const txHash = await wallet.submitTx(signedTx);
+
+      // Poll for confirmation (up to 60s)
+      let confirmed = false;
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_BLOCKFROST_KEY?.startsWith('preprod') ? 'https://cardano-preprod' : 'https://cardano-mainnet'}.blockfrost.io/api/v0/txs/${txHash}`,
+            { headers: { project_id: process.env.NEXT_PUBLIC_BLOCKFROST_KEY! } }
+          );
+          if (res.ok) { confirmed = true; break; }
+        } catch { }
+      }
+
+      if (!confirmed) throw new Error('Transaction not confirmed in time. Please try again.');
+
+      setStatus('done');
+      setTimeout(() => {
+        setVisible(false);
+        setTimeout(onPaid, 300);
+      }, 800);
+
+    } catch (e: any) {
+      setErrorMsg(e?.message?.includes('cancelled') || e?.message?.includes('user') ? 'Transaction cancelled.' : (e?.message || 'Transaction failed.'));
+      setStatus('error');
+    }
+  }
+
+  const isProcessing = status === 'signing' || status === 'confirming';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={!isProcessing ? handleCancel : undefined}>
+      <div className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`} />
+
+      <div
+        className={`relative w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-white/6">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="#00e5ff" fillOpacity="0.7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[#00e5ff]/60 text-[9px] uppercase tracking-widest">Edit Unlock Fee</p>
+              <h3 className="text-white font-black uppercase tracking-tight text-sm">Confirm Payment</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 flex flex-col gap-4">
+
+          {/* Fee breakdown */}
+          <div className="bg-black/40 border border-white/6 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+              <span className="text-white/40 text-xs">Edit unlock fee</span>
+              <span className="text-white font-black text-sm">₳ 5.00</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-white/25 text-[10px]">Event</span>
+              <span className="text-white/50 text-[10px] font-mono truncate max-w-[180px]">{event.title}</span>
+            </div>
+          </div>
+
+          {/* Info note */}
+          <div className="flex items-start gap-2.5 bg-white/3 border border-white/8 rounded-xl px-3 py-2.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+              <path d="M12 8v4M12 16h.01" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <p className="text-white/30 text-[10px] leading-relaxed">
+              A small fee applies to edit event information. <br />This fee is non-refundable.
+            </p>
+          </div>
+
+          {/* Error */}
+          {status === 'error' && errorMsg && (
+            <div className="flex items-start gap-2.5 bg-red-500/8 border border-red-500/20 rounded-xl px-3 py-2.5">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 mt-0.5">
+                <circle cx="8" cy="8" r="6" stroke="rgb(248,113,113)" strokeWidth="1.2" />
+                <path d="M8 5v3M8 10h.01" stroke="rgb(248,113,113)" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+              <p className="text-red-400 text-[10px] leading-relaxed">{errorMsg}</p>
+            </div>
+          )}
+
+          {/* Success */}
+          {status === 'done' && (
+            <div className="flex items-center gap-2.5 bg-[#00ff88]/8 border border-[#00ff88]/20 rounded-xl px-3 py-2.5">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <path d="M2 8l4 4 8-8" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="text-[#00ff88] text-[10px]">Payment confirmed — opening editor...</p>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 flex gap-2">
+          <button
+            onClick={handleCancel}
+            disabled={isProcessing || status === 'done'}
+            className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/8 border border-white/10 text-white/50 hover:text-white/80 text-xs font-bold uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handlePay}
+            disabled={isProcessing || status === 'done'}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00e5ff] hover:bg-[#33ecff] text-black text-xs font-black uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {status === 'idle' || status === 'error' ? (
+              <>
+                Pay ₳ 5
+              </>
+            ) : status === 'signing' ? (
+              <>
+                <div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />
+                Sign in wallet...
+              </>
+            ) : status === 'confirming' ? (
+              <>
+                <div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Confirmed
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
   event: any;
   onClose: () => void;
@@ -419,16 +615,16 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
       const { data, error: err } = await supabase
         .from('events')
         .update({
-          description: form.description || null,
-          date: form.date || null,
-          registration_deadline: form.registration_deadline || null,
-          start_time: form.start_time || null,
-          end_time: form.end_time || null,
-          city: form.city || null,
-          country: form.country || null,
-          address: form.address || null,
-          organizer_name: form.organizer_name || null,
-          organizer_link: form.organizer_link || null,
+          description: form.description || event.description || null,
+          date: form.date || event.date || null,
+          registration_deadline: form.registration_deadline || event.registration_deadline || null,
+          start_time: form.start_time || event.start_time || null,
+          end_time: form.end_time || event.end_time || null,
+          city: form.city || event.city || null,
+          country: form.country || event.country || null,
+          address: form.address || event.address || null,
+          organizer_name: form.organizer_name || event.organizer_name || null,
+          organizer_link: form.organizer_link || event.organizer_link || null,
         })
         .eq('id', event.id)
         .select()
@@ -619,7 +815,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
 
 function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, status: 'upcoming' as 'upcoming' | 'ongoing' | 'ended' });
-  const [showEdit, setShowEdit] = useState(false);
+  const [editStage, setEditStage] = useState<'closed' | 'payment' | 'form'>('closed');
   const [eventData, setEventData] = useState(event);
 
   const formatDate = (d: string | null) => {
@@ -876,7 +1072,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
             ))}
           </div>
           <button
-            onClick={() => setShowEdit(true)}
+            onClick={() => setEditStage('payment')}
             disabled={isEnded}
             title={isEnded ? 'Cannot edit event after it has ended' : 'Edit event details'}
             className={`mt-4 flex items-center justify-center gap-2 w-full text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200 ${isEnded
@@ -920,10 +1116,18 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
 
       </div>
 
-      {showEdit && (
+      {editStage === 'payment' && (
+        <EditPaymentGate
+          event={eventData}
+          onPaid={() => setEditStage('form')}
+          onCancel={() => setEditStage('closed')}
+        />
+      )}
+
+      {editStage === 'form' && (
         <EditEventModal
           event={eventData}
-          onClose={() => setShowEdit(false)}
+          onClose={() => setEditStage('closed')}
           onSaved={(updated) => setEventData(updated)}
           onEventUpdated={(updated) => {
             setEventData(updated);

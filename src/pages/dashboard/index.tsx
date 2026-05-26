@@ -632,7 +632,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
     function calculate() {
       if (!event.date) return;
       const eventStartTime = new Date(`${event.date}T${event.start_time || '00:00:00'}`).getTime();
-      const eventEndTime = event.end_time 
+      const eventEndTime = event.end_time
         ? new Date(`${event.date}T${event.end_time}`).getTime()
         : new Date(`${event.date}T23:59:59`).getTime(); // If no end_time, assume end of day
       const nextDayStart = new Date(event.date);
@@ -882,7 +882,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
             className={`mt-4 flex items-center justify-center gap-2 w-full text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200 ${isEnded
               ? 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
               : 'bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/70 hover:text-white'
-            }`}
+              }`}
           >
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
               <path d="M11.5 2.5a1.414 1.414 0 012 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -908,7 +908,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
             ))}
           </div>
           <button
-            onClick={() => { /* Guests list — to be built */ }}
+            onClick={() => window.open(`/dashboard/guests/${eventData.id}`, '_blank')}
             className="mt-4 flex items-center justify-center gap-2 w-full bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 border border-[#00e5ff]/30 hover:border-[#00e5ff]/60 text-[#00e5ff] text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
           >
             View Guests

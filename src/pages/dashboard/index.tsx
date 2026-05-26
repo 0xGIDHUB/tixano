@@ -618,7 +618,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
 }
 
 function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void }) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, status: 'upcoming' as 'upcoming' | 'ongoing' | 'ended' });
   const [showEdit, setShowEdit] = useState(false);
   const [eventData, setEventData] = useState(event);
 
@@ -631,31 +631,50 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
   useEffect(() => {
     function calculate() {
       if (!event.date) return;
-      const eventTime = new Date(`${event.date}T${event.start_time || '00:00:00'}`).getTime();
+      const eventStartTime = new Date(`${event.date}T${event.start_time || '00:00:00'}`).getTime();
+      const eventEndTime = event.end_time 
+        ? new Date(`${event.date}T${event.end_time}`).getTime()
+        : new Date(`${event.date}T23:59:59`).getTime(); // If no end_time, assume end of day
+      const nextDayStart = new Date(event.date);
+      nextDayStart.setDate(nextDayStart.getDate() + 1);
+      nextDayStart.setHours(0, 0, 0, 0);
       const now = Date.now();
-      const diff = eventTime - now;
 
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
-        return;
+      // Determine event status
+      let status: 'upcoming' | 'ongoing' | 'ended' = 'upcoming';
+      let diff = eventStartTime - now;
+
+      if (now >= eventStartTime && now <= eventEndTime) {
+        // Event is currently ongoing
+        status = 'ongoing';
+        diff = 0; // Don't show countdown during ongoing
+      } else if (now > nextDayStart.getTime()) {
+        // Event date has passed (it's the next day or later)
+        status = 'ended';
+        diff = -1;
+      } else if (diff <= 0) {
+        // Event should have started but hasn't ended yet (shouldn't reach here with above logic, but safety check)
+        status = 'ongoing';
+        diff = 0;
       }
 
       setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((diff % (1000 * 60)) / 1000),
-        isPast: false,
+        days: Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24))),
+        hours: Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))),
+        minutes: Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))),
+        seconds: Math.max(0, Math.floor((diff % (1000 * 60)) / 1000)),
+        status,
       });
     }
 
     calculate();
     const interval = setInterval(calculate, 1000);
     return () => clearInterval(interval);
-  }, [event.date, event.start_time]);
+  }, [event.date, event.start_time, event.end_time]);
 
   const isFull = event.capacity && event.total_registrations >= event.capacity;
-  const isPast = timeLeft.isPast;
+  const isEnded = timeLeft.status === 'ended';
+  const isOngoing = timeLeft.status === 'ongoing';
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -744,12 +763,17 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
         <div className="flex-shrink-0 flex flex-col gap-3" style={{ width: '260px' }}>
 
           {/* Countdown */}
-          <div className={`w-full rounded-2xl border px-4 py-3 flex flex-col items-center justify-center ${isPast ? 'border-white/8 bg-[#0a0a0a]' : 'border-[#00e5ff]/15 bg-[#00e5ff]/5'
+          <div className={`w-full rounded-2xl border px-4 py-3 flex flex-col items-center justify-center ${isEnded ? 'border-white/8 bg-[#0a0a0a]' : isOngoing ? 'border-[#00ff88]/15 bg-[#00ff88]/5' : 'border-[#00e5ff]/15 bg-[#00e5ff]/5'
             }`} style={{ height: '88px' }}>
-            {isPast ? (
+            {isEnded ? (
               <>
                 <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Event Status</p>
                 <p className="text-white/60 text-xl font-black uppercase tracking-widest">Ended</p>
+              </>
+            ) : isOngoing ? (
+              <>
+                <p className="text-[#00ff88]/50 text-[9px] uppercase tracking-widest mb-1">Event Status</p>
+                <p className="text-[#00ff88] text-xl font-black uppercase tracking-widest">Ongoing Now</p>
               </>
             ) : (
               <>
@@ -779,18 +803,18 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
           {/* Check-in button */}
           <button
             onClick={() => { /* Check-in flow — to be built */ }}
-            disabled={!isPast && !isFull}
-            title={!isPast && !isFull ? 'Check-in opens when the event starts' : 'Start scanning attendee tickets'}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-200 ${isPast || isFull
-              ? 'bg-[#00e5ff] text-black hover:bg-[#33ecff] hover:-translate-y-0.5'
-              : 'bg-[#00e5ff]/10 border border-[#00e5ff]/20 text-[#00e5ff]/50 cursor-not-allowed'
+            disabled={isEnded || (!isOngoing && !isFull)}
+            title={isEnded ? 'Event has ended' : !isOngoing && !isFull ? 'Check-in opens when the event starts' : 'Start scanning attendee tickets'}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-200 ${isEnded || (!isOngoing && !isFull)
+              ? 'bg-[#00e5ff]/10 border border-[#00e5ff]/20 text-[#00e5ff]/50 cursor-not-allowed'
+              : 'bg-[#00e5ff] text-black hover:bg-[#33ecff] hover:-translate-y-0.5'
               }`}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M4 5.4A1.4 1.4 0 0 1 5.4 4H7a1 1 0 0 0 0-2H5.4A3.4 3.4 0 0 0 2 5.4V7a1 1 0 0 0 2 0V5.4ZM17 2a1 1 0 1 0 0 2h1.6A1.4 1.4 0 0 1 20 5.4V7a1 1 0 1 0 2 0V5.4A3.4 3.4 0 0 0 18.6 2H17ZM4 17a1 1 0 1 0-2 0v1.6A3.4 3.4 0 0 0 5.4 22H7a1 1 0 1 0 0-2H5.4A1.4 1.4 0 0 1 4 18.6V17ZM22 17a1 1 0 1 0-2 0v1.6a1.4 1.4 0 0 1-1.4 1.4H17a1 1 0 1 0 0 2h1.6a3.4 3.4 0 0 0 3.4-3.4V17ZM1 11a1 1 0 1 0 0 2h22a1 1 0 1 0 0-2H1Z"
-                fill={isPast || isFull ? 'black' : 'rgba(0,229,255,0.5)'} />
+                fill={isEnded || (!isOngoing && !isFull) ? 'rgba(0,229,255,0.5)' : 'black'} />
             </svg>
-            {isPast || isFull ? 'Check-in' : 'Check-in'}
+            {isEnded ? 'Check-in' : 'Check-in'}
           </button>
 
         </div>
@@ -853,7 +877,12 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
           </div>
           <button
             onClick={() => setShowEdit(true)}
-            className="mt-4 flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/70 hover:text-white text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200"
+            disabled={isEnded}
+            title={isEnded ? 'Cannot edit event after it has ended' : 'Edit event details'}
+            className={`mt-4 flex items-center justify-center gap-2 w-full text-[10px] uppercase tracking-widest font-bold px-3 py-2.5 rounded-lg transition-all duration-200 ${isEnded
+              ? 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
+              : 'bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/30 text-white/70 hover:text-white'
+            }`}
           >
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
               <path d="M11.5 2.5a1.414 1.414 0 012 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

@@ -436,65 +436,61 @@ export default function ExploreEvents() {
                       {filteredEvents.map((event) => {
                         const isFull = event.capacity ? event.total_registrations >= event.capacity : false;
                         return (
-                          <div key={event.id} className="flex flex-col bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden hover:border-white/15 transition-all duration-200 group">
-                            <div className="relative w-full aspect-square overflow-hidden">
-                              {event.cover_image_url ? (
-                                <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-[#111] flex items-center justify-center">
-                                  <span className="text-white/10 text-xs uppercase tracking-widest">No Image</span>
-                                </div>
-                              )}
-                              <div className="absolute top-3 left-3">
-                                <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border backdrop-blur-sm ${event.pricing === 'free' ? 'text-[#00ff88] border-[#00ff88]/30 bg-black/60' : 'text-[#00e5ff] border-[#00e5ff]/30 bg-black/60'}`}>
-                                  {event.pricing === 'free' ? 'Free' : `₳ ${event.ticket_price}`}
-                                </span>
-                              </div>
-                              {isFull && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <span className="text-white/60 text-xs font-bold uppercase tracking-widest border border-white/20 px-3 py-1 rounded-full">Sold Out</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex flex-col flex-1 p-4 gap-3">
-                              <h3 className="text-white/90 font-black uppercase text-sm tracking-tight leading-tight line-clamp-2">{event.title}</h3>
-                              <div className="flex flex-col gap-1.5 text-xs text-white/35">
-                                <div className="flex items-center gap-1.5">
-                                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                    <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-                                    <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                                  </svg>
-                                  <span>{formatDate(event.date)}{event.start_time ? ` · ${formatTime(event.start_time)}` : ''}</span>
-                                </div>
-                                {event.city && (
-                                  <div className="flex items-center gap-1.5">
-                                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                      <path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.75 4.5 8.5 4.5 8.5S12.5 9.75 12.5 6c0-2.49-2.01-4.5-4.5-4.5z" stroke="currentColor" strokeWidth="1.2"/>
-                                      <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
-                                    </svg>
-                                    <span>{event.city}{event.country ? `, ${event.country}` : ''}</span>
+                          <Link key={event.id} href={`/events/${event.id}`}>
+                            <div className="flex flex-col bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden hover:border-[#00e5ff]/40 transition-all duration-200 group cursor-pointer h-full">
+                              <div className="relative w-full aspect-square overflow-hidden">
+                                {event.cover_image_url ? (
+                                  <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                ) : (
+                                  <div className="w-full h-full bg-[#111] flex items-center justify-center">
+                                    <span className="text-white/10 text-xs uppercase tracking-widest">No Image</span>
                                   </div>
                                 )}
-                                {event.capacity && (
-                                  <div className="flex items-center gap-1.5">
-                                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                                      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
-                                      <path d="M1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                                      <path d="M11 7.5c1.5 0 3 1 3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                                      <circle cx="11" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/>
-                                    </svg>
-                                    <span>{event.total_registrations}/{event.capacity} registered</span>
+                                <div className="absolute top-3 left-3">
+                                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border backdrop-blur-sm ${event.pricing === 'free' ? 'text-[#00ff88] border-[#00ff88]/30 bg-black/60' : 'text-[#00e5ff] border-[#00e5ff]/30 bg-black/60'}`}>
+                                    {event.pricing === 'free' ? 'Free' : `₳ ${event.ticket_price}`}
+                                  </span>
+                                </div>
+                                {isFull && (
+                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                    <span className="text-white/60 text-xs font-bold uppercase tracking-widest border border-white/20 px-3 py-1 rounded-full">Sold Out</span>
                                   </div>
                                 )}
                               </div>
-                              <Link
-                                href={`/events/${event.id}`}
-                                className={`mt-auto w-full text-center py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-200 ${isFull ? 'bg-white/5 text-white/20 cursor-not-allowed pointer-events-none border border-white/5' : 'bg-[#00e5ff] text-black hover:bg-[#33ecff]'}`}
-                              >
-                                {isFull ? 'Sold Out' : 'View Event →'}
-                              </Link>
+                              <div className="flex flex-col flex-1 p-4 gap-3">
+                                <h3 className="text-white/90 font-black uppercase text-sm tracking-tight leading-tight line-clamp-2 group-hover:text-[#00e5ff] transition-colors duration-200">{event.title}</h3>
+                                <div className="flex flex-col gap-1.5 text-xs text-white/35">
+                                  <div className="flex items-center gap-1.5 group-hover:text-white/50 transition-colors duration-200">
+                                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                      <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                                      <path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                    </svg>
+                                    <span>{formatDate(event.date)}{event.start_time ? ` · ${formatTime(event.start_time)}` : ''}</span>
+                                  </div>
+                                  {event.city && (
+                                    <div className="flex items-center gap-1.5 group-hover:text-white/50 transition-colors duration-200">
+                                      <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.75 4.5 8.5 4.5 8.5S12.5 9.75 12.5 6c0-2.49-2.01-4.5-4.5-4.5z" stroke="currentColor" strokeWidth="1.2"/>
+                                        <circle cx="8" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                                      </svg>
+                                      <span>{event.city}{event.country ? `, ${event.country}` : ''}</span>
+                                    </div>
+                                  )}
+                                  {event.capacity && (
+                                    <div className="flex items-center gap-1.5 group-hover:text-white/50 transition-colors duration-200">
+                                      <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                                        <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/>
+                                        <path d="M1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                        <path d="M11 7.5c1.5 0 3 1 3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                                        <circle cx="11" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/>
+                                      </svg>
+                                      <span>{event.total_registrations}/{event.capacity} registered</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>

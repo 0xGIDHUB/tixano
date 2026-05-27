@@ -101,6 +101,9 @@ export default function CreateEvent() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewImageDataUrl, setPreviewImageDataUrl] = useState<string | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [form, setForm] = useState<FormData>({
         title: '',
         eventAlias: '',
@@ -163,6 +166,156 @@ export default function CreateEvent() {
         const file = e.dataTransfer.files[0];
         if (file) handleImageChange(file);
     };
+
+    const generatePreviewTicket = async () => {
+        if (!bannerPreview) return;
+
+        setPreviewLoading(true);
+        try {
+            const W = 800;
+            const H = 1000;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Failed to get canvas context');
+
+            // Background
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, W, H);
+
+            // Banner image
+            const BANNER_H = 270;
+            const bannerImage = new Image();
+            bannerImage.crossOrigin = 'anonymous';
+            await new Promise((resolve, reject) => {
+                bannerImage.onload = resolve;
+                bannerImage.onerror = reject;
+                bannerImage.src = bannerPreview;
+            });
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, W, BANNER_H);
+            ctx.clip();
+
+            const bw = bannerImage.width;
+            const bh = bannerImage.height;
+            const bannerScale = Math.max(W / bw, BANNER_H / bh);
+            const scaledW = bw * bannerScale;
+            const scaledH = bh * bannerScale;
+            const bannerOffsetX = (W - scaledW) / 2;
+            const bannerOffsetY = (BANNER_H - scaledH) / 2;
+            ctx.drawImage(bannerImage, bannerOffsetX, bannerOffsetY, scaledW, scaledH);
+
+            ctx.restore();
+
+            // Title section background
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, BANNER_H, W, 90);
+
+            // Top micro-line separator
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
+            ctx.fillRect(0, BANNER_H, W, 1);
+
+            // Asset name text
+            ctx.fillStyle = '#00E5FF';
+            ctx.font = 'bold 22px monospace';
+            ctx.textAlign = 'center';
+            const assetName = `TXNT-${form.eventAlias || 'TICKET'}`.toUpperCase();
+            ctx.fillText(assetName, W / 2, BANNER_H + 55);
+
+            // Outer border
+            ctx.strokeStyle = '#00E5FF';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(2, 2, W - 4, H - 4);
+
+            // Divider
+            const dividerY = BANNER_H + 90;
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.setLineDash([10, 8]);
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(8, dividerY);
+            ctx.lineTo(W - 8, dividerY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // QR Code placeholder (simple white box with cyan border)
+            const QR_SIZE = 430;
+            const qrX = (W - QR_SIZE) / 2;
+            const qrY = dividerY + 90;
+
+            // QR background with rounded edges
+            ctx.fillStyle = '#b1b1b1';
+            const qrBgX = qrX - 16;
+            const qrBgY = qrY - 16;
+            const qrBgSize = QR_SIZE + 32;
+            const qrRadius = 22;
+
+            ctx.beginPath();
+            ctx.moveTo(qrBgX + qrRadius, qrBgY);
+            ctx.lineTo(qrBgX + qrBgSize - qrRadius, qrBgY);
+            ctx.quadraticCurveTo(
+                qrBgX + qrBgSize,
+                qrBgY,
+                qrBgX + qrBgSize,
+                qrBgY + qrRadius
+            );
+            ctx.lineTo(
+                qrBgX + qrBgSize,
+                qrBgY + qrBgSize - qrRadius
+            );
+            ctx.quadraticCurveTo(
+                qrBgX + qrBgSize,
+                qrBgY + qrBgSize,
+                qrBgX + qrBgSize - qrRadius,
+                qrBgY + qrBgSize
+            );
+            ctx.lineTo(qrBgX + qrRadius, qrBgY + qrBgSize);
+            ctx.quadraticCurveTo(
+                qrBgX,
+                qrBgY + qrBgSize,
+                qrBgX,
+                qrBgY + qrBgSize - qrRadius
+            );
+            ctx.lineTo(qrBgX, qrBgY + qrRadius);
+            ctx.quadraticCurveTo(
+                qrBgX,
+                qrBgY,
+                qrBgX + qrRadius,
+                qrBgY
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            const dataUrl = canvas.toDataURL('image/png');
+            setPreviewImageDataUrl(dataUrl);
+            setShowPreviewModal(true);
+        } catch (err) {
+            console.error('Preview generation error:', err);
+            showToast('Failed to generate preview. Please try again.', {
+                title: 'Preview Error',
+                type: 'error',
+                duration: 4000,
+            });
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
+
+    // Handle ESC key to close preview modal
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && showPreviewModal) {
+                setShowPreviewModal(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showPreviewModal]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -799,8 +952,20 @@ export default function CreateEvent() {
                                         }}
                                     />
                                     <p className="text-white/20 text-[11px] mt-2 leading-relaxed text-center">
-                                        Recommended: 16:5 ratio, minimum 800×250px. Max 1MB.
+                                        Recommended: 16:8 ratio, minimum 800×250px. Max 1MB.
                                     </p>
+
+                                    {/* Preview Ticket Button */}
+                                    {bannerPreview && (
+                                        <button
+                                            type="button"
+                                            onClick={generatePreviewTicket}
+                                            disabled={previewLoading}
+                                            className="w-full mt-3 py-2.5 rounded-lg border border-[#00e5ff]/40 bg-[#00e5ff]/5 text-[#00e5ff] text-xs font-bold uppercase tracking-widest hover:bg-[#00e5ff]/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {previewLoading ? 'Generating Preview...' : 'Preview Ticket'}
+                                        </button>
+                                    )}
                                 </div>
 
                             </div>
@@ -912,6 +1077,48 @@ export default function CreateEvent() {
                                 </p>
                             </div>
                         )}
+
+                    </div>
+                </div>
+            )}
+
+            {/* Preview Ticket Modal */}
+            {showPreviewModal && previewImageDataUrl && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-8"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setShowPreviewModal(false);
+                        }
+                    }}
+                >
+                    <div className="w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl flex flex-col items-center gap-4 p-4 relative">
+
+                        {/* Close X Button - Top Right */}
+                        <button
+                            onClick={() => setShowPreviewModal(false)}
+                            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-200"
+                            aria-label="Close preview"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </button>
+
+                        {/* Header */}
+                        <div className="text-center pt-2">
+                            <h2 className="text-white font-black uppercase tracking-tight text-lg">
+                                Ticket Preview
+                            </h2>
+                        </div>
+
+                        {/* Preview Image */}
+                        <img
+                            src={previewImageDataUrl}
+                            alt="Ticket Preview"
+                            className="w-full h-auto rounded-lg border border-white/10"
+                            style={{ maxWidth: '320px' }}
+                        />
 
                     </div>
                 </div>

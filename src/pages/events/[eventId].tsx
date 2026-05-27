@@ -843,7 +843,7 @@ export default function EventDetail() {
                                     <label className={labelClass}>Phone Number</label>
                                     <input
                                         type="tel"
-                                        placeholder="+234 000 000 0000"
+                                        placeholder="+123..."
                                         value={regForm.phone}
                                         onChange={(e) => setRegForm(f => ({ ...f, phone: e.target.value }))}
                                         className={inputClass}

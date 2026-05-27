@@ -39,17 +39,7 @@ const COUNTRIES = [
     'Uzbekistan', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
 ];
 
-function to24Hour(hour: string, minute: string, period: 'AM' | 'PM'): string {
-    let h = parseInt(hour);
-    const m = minute.padStart(2, '0');
-    if (isNaN(h)) return '';
-    if (period === 'AM') {
-        if (h === 12) h = 0;
-    } else {
-        if (h !== 12) h += 12;
-    }
-    return `${String(h).padStart(2, '0')}:${m}`;
-}
+
 
 interface FormData {
     title: string;
@@ -83,13 +73,7 @@ export default function CreateEvent() {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [processingStep, setProcessingStep] = useState<'signing' | 'confirming' | 'uploading' | 'saving' | null>(null);
 
-    const [startHour, setStartHour] = useState('');
-    const [startMinute, setStartMinute] = useState('');
-    const [startPeriod, setStartPeriod] = useState<'AM' | 'PM'>('AM');
 
-    const [endHour, setEndHour] = useState('');
-    const [endMinute, setEndMinute] = useState('');
-    const [endPeriod, setEndPeriod] = useState<'AM' | 'PM'>('AM');
 
     const [countryQuery, setCountryQuery] = useState('');
     const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
@@ -233,8 +217,8 @@ export default function CreateEvent() {
                     eventAlias: form.eventAlias,
                     description: form.description,
                     date: form.date,
-                    startTime: to24Hour(startHour, startMinute, startPeriod),
-                    endTime: to24Hour(endHour, endMinute, endPeriod),
+                    startTime: form.startTime,
+                    endTime: form.endTime,
                     city: form.city,
                     country: form.country,
                     address: form.address,
@@ -326,7 +310,7 @@ export default function CreateEvent() {
                             return;
                         }
 
-                        if (!startHour || !startMinute) {
+                        if (!form.startTime) {
                             showToast('Please enter a valid start time.', {
                                 title: 'Start Time Required',
                                 type: 'warning',
@@ -335,7 +319,7 @@ export default function CreateEvent() {
                             return;
                         }
 
-                        if (!endHour || !endMinute) {
+                        if (!form.endTime) {
                             showToast('Please enter a valid end time.', {
                                 title: 'End Time Required',
                                 type: 'warning',
@@ -476,79 +460,28 @@ export default function CreateEvent() {
 
                                 {/* Start + End Time */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {[
-                                        {
-                                            label: 'Start Time',
-                                            hour: startHour, setHour: setStartHour,
-                                            minute: startMinute, setMinute: setStartMinute,
-                                            period: startPeriod, setPeriod: setStartPeriod,
-                                        },
-                                        {
-                                            label: 'End Time',
-                                            hour: endHour, setHour: setEndHour,
-                                            minute: endMinute, setMinute: setEndMinute,
-                                            period: endPeriod, setPeriod: setEndPeriod,
-                                        },
-                                    ].map(({ label, hour, setHour, minute, setMinute, period, setPeriod }) => (
-                                        <div key={label}>
-                                            <label className={labelClass}>{label}</label>
-                                            <div className="flex items-center bg-[#0a0a0a] border border-white/10 rounded-lg overflow-hidden focus-within:border-[#00e5ff]/50 focus-within:ring-1 focus-within:ring-[#00e5ff]/20 transition-all duration-200">
-
-                                                {/* Hour */}
-                                                <input
-                                                    type="number"
-                                                    placeholder="12"
-                                                    min={1}
-                                                    max={12}
-                                                    value={hour}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
-                                                            setHour(val);
-                                                        }
-                                                    }}
-                                                    className="w-full bg-transparent text-white text-sm text-center py-3 focus:outline-none placeholder-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                />
-
-                                                <span className="text-white/30 font-bold text-base select-none">:</span>
-
-                                                {/* Minute */}
-                                                <input
-                                                    type="number"
-                                                    placeholder="00"
-                                                    min={0}
-                                                    max={59}
-                                                    value={minute}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
-                                                            setMinute(val.padStart(2, '0').slice(-2));
-                                                        }
-                                                    }}
-                                                    className="w-full bg-transparent text-white text-sm text-center py-3 focus:outline-none placeholder-white/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                />
-
-                                                {/* AM/PM toggle */}
-                                                <div className="flex border-l border-white/10 flex-shrink-0">
-                                                    {(['AM', 'PM'] as const).map((p) => (
-                                                        <button
-                                                            key={p}
-                                                            type="button"
-                                                            onClick={() => setPeriod(p)}
-                                                            className={`px-3 py-3 text-xs font-bold tracking-widest transition-all duration-150
-                ${period === p
-                                                                    ? 'bg-[#00e5ff] text-black'
-                                                                    : 'text-white/30 hover:text-white/60'
-                                                                }`}
-                                                        >
-                                                            {p}
-                                                        </button>
-                                                    ))}
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                    ))}
+                                    <div>
+                                        <label className={labelClass}>Start Time</label>
+                                        <input
+                                            type="time"
+                                            name="startTime"
+                                            value={form.startTime}
+                                            onChange={handleChange}
+                                            className={inputClass}
+                                            style={{ colorScheme: 'dark' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>End Time</label>
+                                        <input
+                                            type="time"
+                                            name="endTime"
+                                            value={form.endTime}
+                                            onChange={handleChange}
+                                            className={inputClass}
+                                            style={{ colorScheme: 'dark' }}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* City + Country */}

@@ -1008,7 +1008,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
 
           {/* Check-in button */}
           <button
-            onClick={() => { /* Check-in flow — to be built */ }}
+            onClick={() => window.open(`/dashboard/checkin/${eventData.id}`, '_blank')}
             disabled={isEnded || (!isOngoing && !isFull)}
             title={isEnded ? 'Event has ended' : !isOngoing && !isFull ? 'Check-in opens when the event starts' : 'Start scanning attendee tickets'}
             className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-200 ${isEnded || (!isOngoing && !isFull)

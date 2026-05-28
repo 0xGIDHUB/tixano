@@ -33,6 +33,7 @@ export default function App({ Component, pageProps }: CustomAppProps) {
   const router = useRouter();
   const hideLayout = Component.hideLayout ?? false;
   const isDashboard = router.pathname === '/dashboard';
+  const isCheckin = router.pathname.startsWith('/dashboard/checkin');
 
   return (
     <MeshProvider>
@@ -40,7 +41,7 @@ export default function App({ Component, pageProps }: CustomAppProps) {
       {hideLayout ? (
         <Component {...pageProps} />
       ) : (
-        <PageWrapper hideFooter={isDashboard}>
+        <PageWrapper hideFooter={isDashboard || isCheckin} hideNavbar={isCheckin}>
           <Component {...pageProps} />
         </PageWrapper>
       )}

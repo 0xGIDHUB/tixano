@@ -42,7 +42,7 @@ export default function Footer() {
 
             <div className="flex flex-col gap-2.5">
               <span className="text-white/20 text-[10px] uppercase tracking-[0.15em] font-medium">
-                Socials
+                Contact
               </span>
               <div className="flex gap-4">
                 <a
@@ -62,15 +62,6 @@ export default function Footer() {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.89 1.5H22.5L14.51 10.35L24 22.5H16.62L10.88 15.73L4.12 22.5H0.51L8.91 13.27L0 1.5H7.59L12.89 7.76L18.89 1.5ZM17.05 20.68H19.39L6.31 3.77H3.8L17.05 20.68Z" />
                   </svg>
-                </a>
-                <a
-                  href="https://discord.gg/tixano"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Discord"
-                  className="text-white/50 hover:text-[#00e5ff] transition-colors duration-200"
-                >
-                  <FaDiscord size={18} />
                 </a>
               </div>
             </div>

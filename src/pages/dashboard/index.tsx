@@ -82,7 +82,20 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
           .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time, registration_deadline, address, organizer_name, organizer_link')
           .eq('organizer_wallet', addr)
           .order('created_at', { ascending: false });
-        if (data) setEvents(data);
+        if (data) {
+          // Sort events so past events appear at the end
+          const now = new Date();
+          const sortedEvents = [...data].sort((a, b) => {
+            const isAPast = a.date && new Date(a.date) < new Date(now.toDateString());
+            const isBPast = b.date && new Date(b.date) < new Date(now.toDateString());
+            
+            // If both are past or both are upcoming, maintain original order
+            if (isAPast === isBPast) return 0;
+            // Past events go to the end (return 1)
+            return isAPast ? 1 : -1;
+          });
+          setEvents(sortedEvents);
+        }
       } catch (e) { console.error(e); }
       setLoading(false);
     }
@@ -104,10 +117,10 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const now = Date.now();
-      if (now - lastWheel.current < 550) return;
+      if (now - lastWheel.current < 200) return;
       lastWheel.current = now;
-      if (e.deltaX > 20 || e.deltaY > 20) goTo(activeIndex + 1);
-      else if (e.deltaX < -20 || e.deltaY < -20) goTo(activeIndex - 1);
+      if (e.deltaX > 10 || e.deltaY > 10) goTo(activeIndex + 1);
+      else if (e.deltaX < -10 || e.deltaY < -10) goTo(activeIndex - 1);
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
@@ -253,7 +266,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
         <div className="flex items-center justify-center gap-2 mt-5 flex-shrink-0">
           {events.map((_, i) => (
             <button key={i} onClick={() => goTo(i)}
-              className={`rounded-full transition-all duration-300 ${i === activeIndex ? 'w-5 h-1.5 bg-[#00e5ff]' : 'w-1.5 h-1.5 bg-white/15 hover:bg-white/30'}`}
+              className={`rounded-full transition-all duration-300 ${i === activeIndex ? 'w-5 h-2 bg-[#00e5ff]' : 'w-2 h-2 bg-white/15 hover:bg-white/30'}`}
             />
           ))}
         </div>

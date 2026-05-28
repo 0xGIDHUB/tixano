@@ -313,7 +313,7 @@ export default function CreateEvent() {
 
             ctx.drawImage(qrImage, qrX, qrY, QR_SIZE, QR_SIZE);
 
-            
+
             const dataUrl = canvas.toDataURL('image/png');
             setPreviewImageDataUrl(dataUrl);
             setShowPreviewModal(true);
@@ -365,7 +365,6 @@ export default function CreateEvent() {
                 eventUuid,
                 eventName: form.eventAlias,
                 eventTitle: form.title,
-                eventDate: form.date,
                 eventCapacity: parseInt(form.capacity),
                 nftImageUri,
             });

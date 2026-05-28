@@ -209,14 +209,6 @@ export default function EventDetail() {
     const canRegister = !isFull && !isPast && !isDeadlinePassed;
 
     function handleRegisterClick() {
-        if (!connected) {
-            showToast('Connect your wallet to register for this event.', {
-                title: 'Wallet Required',
-                type: 'info',
-                duration: 5000,
-            });
-            return;
-        }
         setShowRegModal(true);
     }
 
@@ -721,16 +713,16 @@ export default function EventDetail() {
                                 </div>
 
                                 {/* Register button */}
-                                {canRegister ? (
+                                {canRegister && connected ? (
                                     <button
                                         onClick={handleRegisterClick}
                                         className="w-full bg-[#00e5ff] text-black font-black uppercase tracking-widest py-3.5 rounded-xl text-sm hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5"
                                     >
-                                        {connected ? 'Register Now' : 'Connect to Register'}
+                                        Register Now
                                     </button>
                                 ) : (
                                     <button disabled className="w-full bg-white/5 text-white/20 font-black uppercase tracking-widest py-3.5 rounded-xl text-sm border border-white/5 cursor-not-allowed">
-                                        {isFull ? 'Sold Out' : isPast ? 'Event Ended' : 'Registration Closed'}
+                                        {!connected ? 'Connect Wallet' : isFull ? 'Sold Out' : isPast ? 'Event Ended' : 'Registration Closed'}
                                     </button>
                                 )}
 

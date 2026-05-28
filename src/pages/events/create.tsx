@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
+import QRCode from 'qrcode';
 import { buildMintOwnerTicketTx } from '@/lib/cardano/mint';
 import { waitForConfirmation } from '@/lib/cardano/verify';
 import { uploadEventImage } from '@/lib/supabase/storage';
@@ -242,13 +243,24 @@ export default function CreateEvent() {
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // QR Code placeholder (simple white box with cyan border)
+            // QR Code placeholder (generate real QR code)
             const QR_SIZE = 430;
             const qrX = (W - QR_SIZE) / 2;
             const qrY = dividerY + 90;
 
+            // Generate QR code from "TIXANO TICKET PREVIEW"
+            const qrDataUrl = await QRCode.toDataURL('TIXANO TICKET PREVIEW', {
+                width: QR_SIZE,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff',
+                },
+                errorCorrectionLevel: 'H',
+            });
+
             // QR background with rounded edges
-            ctx.fillStyle = '#b1b1b1';
+            ctx.fillStyle = '#ffffff';
             const qrBgX = qrX - 16;
             const qrBgY = qrY - 16;
             const qrBgSize = QR_SIZE + 32;
@@ -290,6 +302,18 @@ export default function CreateEvent() {
             ctx.closePath();
             ctx.fill();
 
+            // Draw QR code image
+            const qrImage = new Image();
+            qrImage.crossOrigin = 'anonymous';
+            await new Promise((resolve, reject) => {
+                qrImage.onload = resolve;
+                qrImage.onerror = reject;
+                qrImage.src = qrDataUrl;
+            });
+
+            ctx.drawImage(qrImage, qrX, qrY, QR_SIZE, QR_SIZE);
+
+            
             const dataUrl = canvas.toDataURL('image/png');
             setPreviewImageDataUrl(dataUrl);
             setShowPreviewModal(true);
@@ -1116,7 +1140,7 @@ export default function CreateEvent() {
                         <img
                             src={previewImageDataUrl}
                             alt="Ticket Preview"
-                            className="w-full h-auto rounded-lg border border-white/10"
+                            className="w-full h-auto border border-white/10"
                             style={{ maxWidth: '320px' }}
                         />
 

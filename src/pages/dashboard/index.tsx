@@ -83,17 +83,27 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
           .eq('organizer_wallet', addr)
           .order('created_at', { ascending: false });
         if (data) {
-          // Sort events so past events appear at the end
+          // Sort events: closest upcoming first, then least close upcoming, then past events at the end
           const now = new Date();
+          const todayStart = new Date(now.toDateString());
+          
           const sortedEvents = [...data].sort((a, b) => {
-            const isAPast = a.date && new Date(a.date) < new Date(now.toDateString());
-            const isBPast = b.date && new Date(b.date) < new Date(now.toDateString());
+            const dateA = a.date ? new Date(a.date) : null;
+            const dateB = b.date ? new Date(b.date) : null;
             
-            // If both are past or both are upcoming, maintain original order
-            if (isAPast === isBPast) return 0;
-            // Past events go to the end (return 1)
-            return isAPast ? 1 : -1;
+            const isAPast = dateA && dateA < todayStart;
+            const isBPast = dateB && dateB < todayStart;
+            
+            // If one is past and the other isn't, past goes to the end
+            if (isAPast !== isBPast) {
+              return isAPast ? 1 : -1;
+            }
+            
+            // Both are past or both are upcoming - sort by date (closest first)
+            if (!dateA || !dateB) return 0;
+            return dateA.getTime() - dateB.getTime();
           });
+          
           setEvents(sortedEvents);
         }
       } catch (e) { console.error(e); }
@@ -117,7 +127,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const now = Date.now();
-      if (now - lastWheel.current < 200) return;
+      if (now - lastWheel.current < 20) return; // Throttle wheel events to prevent rapid navigation
       lastWheel.current = now;
       if (e.deltaX > 10 || e.deltaY > 10) goTo(activeIndex + 1);
       else if (e.deltaX < -10 || e.deltaY < -10) goTo(activeIndex - 1);

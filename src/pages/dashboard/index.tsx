@@ -292,6 +292,9 @@ function EventCard({ event, active, formatDate }: {
   active?: boolean;
   formatDate: (d: string | null) => string;
 }) {
+  // Track image loading state
+  const [imageLoading, setImageLoading] = useState(true);
+  
   // Calculate event status flags
   const isFull = event.capacity && event.total_registrations >= event.capacity;
   const isPast = event.date && new Date(event.date) < new Date(new Date().toDateString());
@@ -305,7 +308,20 @@ function EventCard({ event, active, formatDate }: {
         {/* Event cover image */}
         <div className="relative flex-shrink-0 m-3 rounded-xl overflow-hidden" style={{ width: '160px', height: '160px' }}>
           {event.cover_image_url ? (
-            <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
+            <>
+              {/* Skeleton loader while image is loading */}
+              {imageLoading && (
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
+              )}
+              {/* Image element */}
+              <img 
+                src={event.cover_image_url} 
+                alt={event.title} 
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                onLoad={() => setImageLoading(false)}
+                onError={() => setImageLoading(false)}
+              />
+            </>
           ) : (
             <div className="w-full h-full bg-[#111] flex items-center justify-center">
               <span className="text-white/10 text-[10px] uppercase tracking-widest">No Image</span>

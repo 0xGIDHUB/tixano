@@ -52,7 +52,6 @@ export default function CheckInPage() {
     const streamRef = useRef<MediaStream | null>(null);
     const animFrameRef = useRef<number>(0);
     const scanCooldown = useRef(false);
-
     // Fetch event info + already-checked-in tickets
     useEffect(() => {
         if (!eventId || typeof eventId !== 'string') return;
@@ -244,7 +243,7 @@ export default function CheckInPage() {
                         <div className="flex-shrink-0 px-5 py-4 border-b border-white/10">
                             <div className="flex items-center justify-between mb-1">
                                 <h2 className="text-white/70 text-xs font-black uppercase tracking-widest">Checked In</h2>
-                                <span className="text-[#00e5ff] text-xs font-bold tabular-nums bg-[#00e5ff]/10 border border-[#00e5ff]/20 px-2 py-0.5 rounded-full">
+                                <span className="text-[#00e5ff] text-sm font-bold tabular-nums px-2 py-0.5">
                                     {checkedInCount}
                                 </span>
                             </div>

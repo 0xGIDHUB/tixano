@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
@@ -146,6 +146,36 @@ export default function GuestsPage() {
       </Head>
 
       <div className="min-h-screen bg-black">
+        {/* Top bar */}
+        <div className="border-b border-white/8 bg-black/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs font-mono uppercase tracking-widest">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M12 8H4M8 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Dashboard
+              </Link>
+              <span className="text-white/10">·</span>
+              <span className="text-white/20 text-xs uppercase tracking-widest font-mono">
+                {eventLoading ? '...' : (event?.title || 'Unknown Event')}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {event && (
+                <>
+                  <span className="text-white/20 text-xs">{formatDate(event.date || '')}</span>
+                  <span className="text-white/10">·</span>
+                </>
+              )}
+              <span className="text-[#00e5ff] text-xs font-bold">{guests.length} registered</span>
+              {event?.capacity && (
+                <span className="text-white/20 text-xs">/ {event.capacity} cap</span>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Page header */}
@@ -166,7 +196,7 @@ export default function GuestsPage() {
               { label: 'Not Yet', value: guests.length - usedCount, color: 'text-white/60' },
               { label: 'Check-in Rate', value: guests.length > 0 ? `${Math.round((usedCount / guests.length) * 100)}%` : '0%', color: 'text-[#00e5ff]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#0a0a0a] border border-white/20 rounded-xl px-4 py-3">
+              <div key={label} className="bg-[#0a0a0a] border border-white/8 rounded-xl px-4 py-3">
                 <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">{label}</p>
                 <p className={`${color} text-2xl font-black tabular-nums`}>{loading ? '—' : value}</p>
               </div>
@@ -266,7 +296,7 @@ export default function GuestsPage() {
             {/* Empty state */}
             {!loading && guests.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-12 h-12 rounded-xl bg-black/30 border border-white/20 flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-xl bg-black/30 border border-white/8 flex items-center justify-center mb-4">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <circle cx="9" cy="7" r="4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
                     <path d="M3 21c0-4 2.5-7 6-7h0" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
@@ -290,7 +320,7 @@ export default function GuestsPage() {
             {!loading && paginated.map((guest, idx) => (
               <div
                 key={guest.id}
-                className="grid border-b border-white/10 last:border-0 hover:bg-white/2 transition-colors duration-150 group"
+                className="grid border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors duration-150 group"
                 style={{ gridTemplateColumns: '2rem 1.5fr 1.8fr 1.2fr 1.1fr 1.4fr 6rem 5rem' }}
               >
                 {/* Row number */}

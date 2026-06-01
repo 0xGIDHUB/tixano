@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { MeshCardanoBrowserWallet } from '@meshsdk/wallet';
 import { supabase } from '@/lib/supabase/client';
+import jsQR from 'jsqr';
 
 interface CheckedInTicket {
     id: string;
@@ -46,7 +47,8 @@ export default function CheckInPage() {
     const [scannerActive, setScannerActive] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
-    const [lastScanned, setLastScanned] = useState<string | null>(null);
+    const lastScannedRef = useRef<string | null>(null);
+    const scanActiveRef = useRef(false);
     const [scanFlash, setScanFlash] = useState(false);
     const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
@@ -102,7 +104,7 @@ export default function CheckInPage() {
 
         if (!connected) {
             setAuthStatus('no_wallet');
-            setAuthMessage('No wallet connected. Please connect your wallet from the dashboard and try again.');
+            setAuthMessage('No wallet connected. Please connect your wallet and try again.');
             return;
         }
 
@@ -165,12 +167,22 @@ export default function CheckInPage() {
         fetchData();
     }, [eventId]);
 
-    // QR decode using canvas + jsQR (loaded dynamically)
-    const decodeFrame = useCallback(async () => {
+    // QR decode using canvas + jsQR 
+    const decodeFrame = useCallback(() => {
         if (!videoRef.current || !canvasRef.current) return;
+
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+
+        if (video.readyState < 2) {
+            animFrameRef.current = requestAnimationFrame(decodeFrame);
+            return;
+        }
+
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+
+        if (w === 0 || h === 0) {
             animFrameRef.current = requestAnimationFrame(decodeFrame);
             return;
         }
@@ -178,41 +190,32 @@ export default function CheckInPage() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        const imageData = ctx.getImageData(0, 0, w, h);
 
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'attemptBoth',
+        });
 
-        try {
-            // @ts-ignore — jsQR is loaded dynamically
-            const jsQR = (window as any).jsQR;
-            if (jsQR) {
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: 'dontInvert',
-                });
-
-                if (code && code.data && !scanCooldown.current && code.data !== lastScanned) {
-                    scanCooldown.current = true;
-                    setLastScanned(code.data);
-                    setScanFlash(true);
-                    setTimeout(() => setScanFlash(false), 400);
-                    handleScanResult(code.data);
-                    setTimeout(() => { scanCooldown.current = false; }, 3000);
-                }
+        if (code?.data) {
+            if (!scanCooldown.current && code.data !== lastScannedRef.current) {
+                scanCooldown.current = true;
+                lastScannedRef.current = code.data;
+                setScanFlash(true);
+                setTimeout(() => setScanFlash(false), 400);
+                handleScanResult(code.data);
+                setTimeout(() => {
+                    scanCooldown.current = false;
+                    lastScannedRef.current = null;
+                }, 3000);
             }
-        } catch { }
+        }
 
         animFrameRef.current = requestAnimationFrame(decodeFrame);
-    }, [lastScanned]);
-
-    // Load jsQR from CDN
-    useEffect(() => {
-        if ((window as any).jsQR) return;
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
-        document.head.appendChild(script);
     }, []);
+
 
     // Enumerate available video devices (cameras)
     useEffect(() => {
@@ -231,24 +234,33 @@ export default function CheckInPage() {
         getDevices();
     }, []);
 
+
     async function startScanner() {
         setCameraError(null);
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-                    facingMode: 'environment',
                     width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    height: { ideal: 720 },
                 },
             });
             streamRef.current = stream;
+
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                await new Promise<void>((resolve) => {
+                    videoRef.current!.onloadedmetadata = () => resolve();
+                });
                 await videoRef.current.play();
             }
+
+            scanActiveRef.current = true;
             setScannerActive(true);
+            cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = requestAnimationFrame(decodeFrame);
+
         } catch (err: any) {
             setCameraError(
                 err.name === 'NotAllowedError'
@@ -261,6 +273,7 @@ export default function CheckInPage() {
     }
 
     function stopScanner() {
+        scanActiveRef.current = false;
         cancelAnimationFrame(animFrameRef.current);
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(t => t.stop());
@@ -269,13 +282,6 @@ export default function CheckInPage() {
         if (videoRef.current) videoRef.current.srcObject = null;
         setScannerActive(false);
     }
-
-    useEffect(() => {
-        if (scannerActive) {
-            animFrameRef.current = requestAnimationFrame(decodeFrame);
-        }
-        return () => cancelAnimationFrame(animFrameRef.current);
-    }, [scannerActive, decodeFrame]);
 
     useEffect(() => () => stopScanner(), []);
 
@@ -705,11 +711,11 @@ export default function CheckInPage() {
                     onClick={() => { if (scanResult.status !== 'verifying') setScanResult(null); }}
                 >
                     <div
-                        className="w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+                        className="w-full max-w-sm bg-[#0a0a0a] border border-white/20 rounded-2xl overflow-hidden shadow-2xl"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Modal header */}
-                        <div className="px-6 pt-6 pb-4 border-b border-white/6 flex items-center justify-between">
+                        <div className="px-6 pt-6 pb-4 border-b border-white/10 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 {scanResult.status === 'verifying' ? (
                                     <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center">

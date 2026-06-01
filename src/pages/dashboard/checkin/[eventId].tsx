@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
+import { MeshCardanoBrowserWallet } from '@meshsdk/wallet';
 import { supabase } from '@/lib/supabase/client';
 
 interface CheckedInTicket {
@@ -30,7 +31,10 @@ interface ScanResult {
 export default function CheckInPage() {
     const router = useRouter();
     const { eventId } = router.query;
-    const { connected } = useWallet();
+    const { connected, wallet } = useWallet();
+
+    const [authStatus, setAuthStatus] = useState<'checking' | 'authorized' | 'no_wallet' | 'not_owner'>('checking');
+    const [authMessage, setAuthMessage] = useState<string>('');
 
     const [event, setEvent] = useState<EventInfo | null>(null);
     const [checkedIn, setCheckedIn] = useState<CheckedInTicket[]>([]);
@@ -52,6 +56,95 @@ export default function CheckInPage() {
     const streamRef = useRef<MediaStream | null>(null);
     const animFrameRef = useRef<number>(0);
     const scanCooldown = useRef(false);
+
+    const [walletReady, setWalletReady] = useState(false);
+
+    // Auto-connect wallet if wallet name is passed from dashboard
+    useEffect(() => {
+        const walletName = router.query.wallet as string;
+
+        async function attemptConnect() {
+            if (!walletName) {
+                setWalletReady(true);
+                return;
+            }
+            if (connected) {
+                setWalletReady(true);
+                return;
+            }
+            try {
+                const installedWallets = MeshCardanoBrowserWallet.getInstalledWallets();
+                const walletExists = installedWallets.some(w => w.name.toLowerCase() === walletName.toLowerCase());
+                if (walletExists) {
+                    await MeshCardanoBrowserWallet.enable(walletName);
+                    // Give MeshJS a moment to propagate the connected state into useWallet
+                    await new Promise(r => setTimeout(r, 800));
+                }
+            } catch (err) {
+                console.error('Failed to connect wallet:', err);
+            } finally {
+                setWalletReady(true);
+            }
+        }
+
+        // Wait for router query to be available (Next.js hydration)
+        if (router.isReady) {
+            attemptConnect();
+        }
+    }, [router.isReady, router.query.wallet]);
+
+    // Security gate — verify wallet is connected AND matches event owner
+    const verifyAccess = useCallback(async () => {
+        if (!eventId || typeof eventId !== 'string') return;
+        if (!walletReady) return;
+
+        setAuthStatus('checking');
+
+        if (!connected) {
+            setAuthStatus('no_wallet');
+            setAuthMessage('No wallet connected. Please connect your wallet from the dashboard and try again.');
+            return;
+        }
+
+        try {
+            const walletAddress = await wallet?.getChangeAddressBech32?.();
+            if (!walletAddress) {
+                setAuthStatus('no_wallet');
+                setAuthMessage('Could not read wallet address. Please reconnect your wallet.');
+                return;
+            }
+
+            const { data: eventOwner, error } = await supabase
+                .from('events')
+                .select('organizer_wallet')
+                .eq('id', eventId)
+                .single();
+
+            if (error || !eventOwner) {
+                setAuthStatus('not_owner');
+                setAuthMessage('Event not found or could not be verified.');
+                return;
+            }
+
+            if (eventOwner.organizer_wallet !== walletAddress) {
+                setAuthStatus('not_owner');
+                setAuthMessage('Access denied. Only the event organizer can access the check-in scanner.');
+                return;
+            }
+
+            setAuthStatus('authorized');
+        } catch (err) {
+            setAuthStatus('not_owner');
+            setAuthMessage('Verification failed. Please try again.');
+        }
+    }, [eventId, connected, wallet, walletReady]);
+
+    useEffect(() => {
+        if (walletReady) {
+            verifyAccess();
+        }
+    }, [walletReady, verifyAccess]);
+
     // Fetch event info + already-checked-in tickets
     useEffect(() => {
         if (!eventId || typeof eventId !== 'string') return;
@@ -200,10 +293,92 @@ export default function CheckInPage() {
         return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
+    // ── Auth gate screens ──
+    if (authStatus === 'checking') {
+        return (
+            <>
+                <Head><title>Verifying — Tixano</title></Head>
+                <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-[#00e5ff]/5 border border-[#00e5ff]/15 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full border-2 border-[#00e5ff]/20 border-t-[#00e5ff] animate-spin" />
+                        </div>
+                        <div className="absolute inset-0 rounded-2xl border border-[#00e5ff]/10 animate-ping" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-white/50 text-sm font-black uppercase tracking-widest mb-1">Verifying Access</p>
+                        <p className="text-white/20 text-xs">Checking wallet authorization...</p>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    if (authStatus === 'no_wallet' || authStatus === 'not_owner') {
+        const isNoWallet = authStatus === 'no_wallet';
+        return (
+            <>
+                <Head><title>Access Denied — Tixano</title></Head>
+                <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 px-6">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border ${isNoWallet
+                        ? 'bg-[#ffaa00]/8 border-[#ffaa00]/20'
+                        : 'bg-red-500/8 border-red-500/20'
+                        }`}>
+                        {isNoWallet ? (
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                <path d="M7 10V7a5 5 0 0110 0v3" stroke="#ffaa00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.7" />
+                                <rect x="5" y="10" width="14" height="10" rx="1.5" stroke="#ffaa00" strokeWidth="1.8" strokeOpacity="0.7" />
+                                <circle cx="12" cy="15" r="1.2" fill="#ffaa00" fillOpacity="0.7" />
+                                <path d="M12 15v2.5" stroke="#ffaa00" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.7" />
+                            </svg>
+                        ) : (
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="rgb(248,113,113)" strokeWidth="1.5" strokeOpacity="0.7" />
+                                <path d="M15 9l-6 6M9 9l6 6" stroke="rgb(248,113,113)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.7" />
+                            </svg>
+                        )}
+                    </div>
+
+                    <div className="text-center max-w-sm">
+                        <p className={`text-sm font-black uppercase tracking-widest mb-2 ${isNoWallet ? 'text-[#ffaa00]/80' : 'text-red-400/80'
+                            }`}>
+                            {isNoWallet ? 'Wallet Not Connected' : 'Access Denied'}
+                        </p>
+                        <p className="text-white/30 text-xs leading-relaxed">{authMessage}</p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+                        <button
+                            onClick={() => { stopScanner(); router.push('/dashboard'); }}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00e5ff] text-black text-xs font-black uppercase tracking-widest hover:bg-[#33ecff] transition-all duration-200"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                <path d="M12 8H4M8 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Back to Dashboard
+                        </button>
+                        {isNoWallet && (
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/50 text-xs font-bold uppercase tracking-widest hover:bg-white/8 hover:text-white/70 transition-all duration-200"
+                            >
+                                Retry
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Tixano watermark */}
+                    <p className="absolute bottom-6 text-white/10 text-[10px] uppercase tracking-widest">Tixano · Secured Check-in</p>
+                </div>
+            </>
+        );
+    }
+
+    // ── Authorized — render full page ──
     return (
         <>
             <Head>
-                <title>{event?.title ? `Check-in — ${event.title}` : 'Check-in'} — Tixano</title>
+                <title>{event?.title ? `Check-in — ${event.title} — Tixano` : 'Check-in — Tixano'}</title>
             </Head>
 
             <div className="h-full bg-black flex flex-col overflow-hidden">
@@ -212,18 +387,21 @@ export default function CheckInPage() {
                 <div className="flex-shrink-0 border-b border-white/8 bg-black/90 backdrop-blur-sm sticky top-0 z-20">
                     <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
 
-                        {/* Event title — styled */}
-                        <div className="flex items-center gap-3">
-                            <div>
-                                <p className="text-white/50 text-[8px] uppercase tracking-[0.3em] font-semibold leading-none mb-1">Event Check-in</p>
-                                <h1 className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-md">
-                                    {event?.title || '...'}
-                                </h1>
-                            </div>
+                        {/* Left: Tixano logo */}
+                        <div className="flex-shrink-0">
+                            <img src="/Tixano Icon.png" alt="Tixano" width={35} height={35} className="object-contain" />
+                        </div>
+
+                        {/* Center: Event title — styled */}
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                            <p className="text-white/50 text-[8px] uppercase tracking-[0.3em] font-semibold leading-none mb-1">Event Check-in</p>
+                            <h1 className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-md">
+                                {event?.title || '...'}
+                            </h1>
                         </div>
 
                         {/* Right: scanner status */}
-                        <div className="flex items-center gap-2.5 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5">
+                        <div className="flex items-center gap-2.5 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5 flex-shrink-0">
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${scannerActive ? 'bg-[#00ff88] shadow-[0_0_6px_rgba(0,255,136,0.6)]' : 'bg-white/20'}`}
                                 style={scannerActive ? { animation: 'pulse 1.5s ease-in-out infinite' } : {}} />
                             <span className="text-white/40 text-[10px] uppercase tracking-widest font-semibold">

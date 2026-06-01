@@ -849,7 +849,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
   );
 }
 
-function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void }) {
+function EventManagerDashboard({ event, onBack, onEventUpdated, name }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void; name?: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, status: 'upcoming' as 'upcoming' | 'ongoing' | 'ended' });
   const [editStage, setEditStage] = useState<'closed' | 'payment' | 'form'>('closed');
   const [eventData, setEventData] = useState(event);
@@ -1034,7 +1034,13 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
 
           {/* Check-in button */}
           <button
-            onClick={() => window.open(`/dashboard/checkin/${eventData.id}`, '_blank')}
+            onClick={() => {
+              if (!name) {
+                console.error('No wallet connected');
+                return;
+              }
+              window.open(`/dashboard/checkin/${eventData.id}?wallet=${encodeURIComponent(name)}`, '_blank');
+            }}
             disabled={isEnded || (!isOngoing && !isFull)}
             title={isEnded ? 'Event has ended' : !isOngoing && !isFull ? 'Check-in opens when the event starts' : 'Start scanning attendee tickets'}
             className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all duration-200 ${isEnded || (!isOngoing && !isFull)
@@ -1178,7 +1184,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated }: { event: any; 
 // Main Dashboard component - displays organizer events and user tickets
 export default function Dashboard() {
   // Wallet and navigation
-  const { connected, wallet } = useWallet();
+  const { connected, wallet, name } = useWallet();
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
@@ -1274,7 +1280,7 @@ export default function Dashboard() {
         <div className="w-full h-full flex flex-col px-6 py-8">
 
           {selectedEventForDetail ? (
-            <EventManagerDashboard event={selectedEventForDetail} onBack={() => setSelectedEventForDetail(null)} onEventUpdated={(updated) => setSelectedEventForDetail(updated)} />
+            <EventManagerDashboard event={selectedEventForDetail} onBack={() => setSelectedEventForDetail(null)} onEventUpdated={(updated) => setSelectedEventForDetail(updated)} name={name} />
           ) : (
             <>
               <div className="flex items-start justify-between mb-10 flex-shrink-0">

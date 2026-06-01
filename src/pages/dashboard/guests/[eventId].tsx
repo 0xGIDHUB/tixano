@@ -31,6 +31,7 @@ export default function GuestsPage() {
   const router = useRouter();
   const { eventId } = router.query;
   const { connected, wallet } = useWallet();
+  const [ready, setReady] = useState(false);
 
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -52,6 +53,19 @@ export default function GuestsPage() {
 
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Wait for MeshJS to rehydrate before checking wallet state
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Only redirect after rehydration window has passed
+  useEffect(() => {
+    if (ready && !connected) {
+      router.replace('/');
+    }
+  }, [ready, connected]);
 
   useEffect(() => {
     if (!eventId || typeof eventId !== 'string') return;
@@ -133,8 +147,8 @@ export default function GuestsPage() {
   const SortIcon = ({ col }: { col: typeof sortBy }) => (
     <svg width="8" height="8" viewBox="0 0 10 10" fill="none" className={`transition-colors ${sortBy === col ? 'text-[#00e5ff]' : 'text-white/20'}`}>
       {sortDir === 'asc' && sortBy === col
-        ? <path d="M5 2l4 6H1l4-6z" fill="currentColor"/>
-        : <path d="M5 8L1 2h8L5 8z" fill="currentColor"/>
+        ? <path d="M5 2l4 6H1l4-6z" fill="currentColor" />
+        : <path d="M5 8L1 2h8L5 8z" fill="currentColor" />
       }
     </svg>
   );
@@ -146,35 +160,6 @@ export default function GuestsPage() {
       </Head>
 
       <div className="min-h-screen bg-black">
-        {/* Top bar */}
-        <div className="border-b border-white/8 bg-black/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs font-mono uppercase tracking-widest">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                  <path d="M12 8H4M8 12l-4-4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Dashboard
-              </Link>
-              <span className="text-white/10">·</span>
-              <span className="text-white/20 text-xs uppercase tracking-widest font-mono">
-                {eventLoading ? '...' : (event?.title || 'Unknown Event')}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {event && (
-                <>
-                  <span className="text-white/20 text-xs">{formatDate(event.date || '')}</span>
-                  <span className="text-white/10">·</span>
-                </>
-              )}
-              <span className="text-[#00e5ff] text-xs font-bold">{guests.length} registered</span>
-              {event?.capacity && (
-                <span className="text-white/20 text-xs">/ {event.capacity} cap</span>
-              )}
-            </div>
-          </div>
-        </div>
 
         <div className="max-w-7xl mx-auto px-6 py-6">
 
@@ -209,7 +194,7 @@ export default function GuestsPage() {
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path d="M7 13A6 6 0 107 1a6 6 0 000 12zM13 13l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M7 13A6 6 0 107 1a6 6 0 000 12zM13 13l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <input
                 type="text"
@@ -220,7 +205,7 @@ export default function GuestsPage() {
               />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                 </button>
               )}
             </div>
@@ -231,15 +216,14 @@ export default function GuestsPage() {
                 <button
                   key={s}
                   onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-150 ${
-                    statusFilter === s
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-150 ${statusFilter === s
                       ? s === 'used'
                         ? 'bg-[#00ff88]/15 text-[#00ff88] border border-[#00ff88]/25'
                         : s === 'unused'
-                        ? 'bg-white/10 text-white/70 border border-white/15'
-                        : 'bg-white/10 text-white/70 border border-white/15'
+                          ? 'bg-white/10 text-white/70 border border-white/15'
+                          : 'bg-white/10 text-white/70 border border-white/15'
                       : 'text-white/30 hover:text-white/50'
-                  }`}
+                    }`}
                 >
                   {s === 'all' ? `All (${guests.length})` : s === 'used' ? `Checked In (${usedCount})` : `Not Yet (${guests.length - usedCount})`}
                 </button>
@@ -253,10 +237,10 @@ export default function GuestsPage() {
           </div>
 
           {/* Table */}
-          <div className="bg-[#0a0a0a] border border-white/8 rounded-2xl overflow-hidden">
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden">
 
             {/* Table header */}
-            <div className="grid border-b border-white/6" style={{ gridTemplateColumns: '2rem 1.5fr 1.8fr 1.2fr 1.1fr 1.4fr 6rem 5rem' }}>
+            <div className="grid border-b border-white/10" style={{ gridTemplateColumns: '2rem 1.5fr 1.8fr 1.2fr 1.1fr 1.4fr 6rem 5rem' }}>
               {[
                 { label: '#', col: null },
                 { label: 'Name', col: 'name' as const },
@@ -298,9 +282,9 @@ export default function GuestsPage() {
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-12 h-12 rounded-xl bg-black/30 border border-white/8 flex items-center justify-center mb-4">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="9" cy="7" r="4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
-                    <path d="M3 21c0-4 2.5-7 6-7h0" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
-                    <path d="M16 11l5 5m0-5l-5 5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="9" cy="7" r="4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                    <path d="M3 21c0-4 2.5-7 6-7h0" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+                    <path d="M16 11l5 5m0-5l-5 5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </div>
                 <p className="text-white/30 text-sm font-black uppercase tracking-tight mb-1">No Guests Yet</p>
@@ -320,7 +304,7 @@ export default function GuestsPage() {
             {!loading && paginated.map((guest, idx) => (
               <div
                 key={guest.id}
-                className="grid border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors duration-150 group"
+                className="grid border-b border-white/10 last:border-0 hover:bg-white/2 transition-colors duration-150 group"
                 style={{ gridTemplateColumns: '2rem 1.5fr 1.8fr 1.2fr 1.1fr 1.4fr 6rem 5rem' }}
               >
                 {/* Row number */}
@@ -353,8 +337,8 @@ export default function GuestsPage() {
                     <span className="truncate">{guest.owner_email}</span>
                     <svg width="9" height="9" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity">
                       {copiedId === `email-${guest.id}`
-                        ? <path d="M2 8l4 4 8-8" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        : <path d="M4 4h8v8H4zM6 4V2h8v8h-2" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+                        ? <path d="M2 8l4 4 8-8" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        : <path d="M4 4h8v8H4zM6 4V2h8v8h-2" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
                       }
                     </svg>
                   </button>
@@ -382,11 +366,10 @@ export default function GuestsPage() {
 
                 {/* Status */}
                 <div className="px-3 py-3.5 flex items-center">
-                  <span className={`flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${
-                    guest.status === 'used'
+                  <span className={`flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${guest.status === 'used'
                       ? 'text-[#00ff88] border-[#00ff88]/25 bg-[#00ff88]/8'
                       : 'text-white/30 border-white/10 bg-white/3'
-                  }`}>
+                    }`}>
                     <span className={`w-1 h-1 rounded-full ${guest.status === 'used' ? 'bg-[#00ff88]' : 'bg-white/25'}`} />
                     {guest.status === 'used' ? 'In' : 'Out'}
                   </span>
@@ -403,7 +386,7 @@ export default function GuestsPage() {
                     >
                       {guest.tx_hash.slice(0, 6)}…
                       <svg width="8" height="8" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </a>
                   ) : (
@@ -426,7 +409,7 @@ export default function GuestsPage() {
                   disabled={currentPage === 1}
                   className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                 >
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
                 {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                   const page = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage >= totalPages - 3 ? totalPages - 6 + i : currentPage - 3 + i;
@@ -434,11 +417,10 @@ export default function GuestsPage() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-7 h-7 rounded-lg border text-[11px] font-bold transition-all ${
-                        page === currentPage
+                      className={`w-7 h-7 rounded-lg border text-[11px] font-bold transition-all ${page === currentPage
                           ? 'bg-[#00e5ff] border-[#00e5ff] text-black'
                           : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white/70'
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
@@ -449,7 +431,7 @@ export default function GuestsPage() {
                   disabled={currentPage === totalPages}
                   className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:border-white/25 hover:text-white/70 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                 >
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
               </div>
             </div>

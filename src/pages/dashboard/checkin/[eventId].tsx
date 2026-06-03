@@ -24,8 +24,18 @@ interface EventInfo {
 
 interface ScanResult {
     raw: string;
-    status: 'verifying' | 'success' | 'error' | 'already_used';
-    ticketData?: any;
+    status: 'verifying' | 'success' | 'error' | 'already_used' | 'invalid_ticket' | 'not_owned';
+    ticketData?: {
+        id: string;
+        asset_name: string;
+        owner_name: string;
+        owner_email: string;
+        owner_phone: string | null;
+        owner_wallet: string;
+        policy_id: string | null;
+        tx_hash: string | null;
+        used_at: string | null;
+    };
     message?: string;
 }
 
@@ -39,7 +49,6 @@ export default function CheckInPage() {
 
     const [event, setEvent] = useState<EventInfo | null>(null);
     const [checkedIn, setCheckedIn] = useState<CheckedInTicket[]>([]);
-    const [checkedInCount, setCheckedInCount] = useState(0);
 
     const [tableSearch, setTableSearch] = useState('');
 
@@ -148,26 +157,112 @@ export default function CheckInPage() {
     }, [walletReady, verifyAccess]);
 
     // Fetch event info + already-checked-in tickets
+    const fetchCheckedInTickets = useCallback(async () => {
+        if (!eventId || typeof eventId !== 'string') return;
+
+        const { data: ticketsRes } = await supabase
+            .from('tickets')
+            .select('id, asset_name, owner_name, used_at')
+            .eq('event_id', eventId as string)
+            .eq('status', 'used')
+            .order('used_at', { ascending: false });
+
+        if (ticketsRes) {
+            setCheckedIn(ticketsRes);
+        }
+    }, [eventId]);
+
     useEffect(() => {
         if (!eventId || typeof eventId !== 'string') return;
 
         async function fetchData() {
-            const [eventRes, ticketsRes] = await Promise.all([
-                supabase.from('events').select('id, title, date, total_registrations, capacity').eq('id', eventId as string).single(),
-                supabase.from('tickets').select('id, asset_name, owner_name, used_at').eq('event_id', eventId as string).eq('status', 'used').order('used_at', { ascending: false }),
-            ]);
+            const { data: eventRes } = await supabase
+                .from('events')
+                .select('id, title, date, total_registrations, capacity')
+                .eq('id', eventId as string)
+                .single();
 
-            if (eventRes.data) setEvent(eventRes.data);
-            if (ticketsRes.data) {
-                setCheckedIn(ticketsRes.data);
-                setCheckedInCount(ticketsRes.data.length);
-            }
+            if (eventRes) setEvent(eventRes);
         }
 
         fetchData();
+        fetchCheckedInTickets();
+    }, [eventId, fetchCheckedInTickets]);
+
+    // Auto-refresh checked-in tickets every 15 seconds
+    useEffect(() => {
+        if (!eventId || typeof eventId !== 'string') return;
+
+        const interval = setInterval(() => {
+            fetchCheckedInTickets();
+        }, 15000); // 15 seconds
+
+        return () => clearInterval(interval);
+    }, [eventId, fetchCheckedInTickets]);
+
+    // Handle scan result and verification
+    const handleScanResult = useCallback(async (raw: string) => {
+        setScanResult({ raw, status: 'verifying' });
+
+        // Stop the scanner after a scan is detected
+        stopScanner();
+
+        // Parse QR code data — just the ticket ID UUID
+        const ticketId = raw.trim();
+
+        if (!ticketId || typeof eventId !== 'string') {
+            setScanResult({
+                raw,
+                status: 'error',
+                message: 'Invalid QR code format',
+            });
+            return;
+        }
+
+        try {
+            // Call verify-checkin API
+            const response = await fetch('/api/tickets/verify-checkin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ticketId,
+                    eventId,
+                }),
+            });
+
+            const result = await response.json();
+
+            // Update modal with the verification result
+            setScanResult({
+                raw,
+                status: result.status,
+                message: result.message,
+                ticketData: result.ticketData,
+            });
+
+            // If successful, add the newly checked-in ticket to the table using functional state update
+            if (result.status === 'success' && result.ticketData) {
+                const newCheckedIn: CheckedInTicket = {
+                    id: result.ticketData.id,
+                    asset_name: result.ticketData.asset_name,
+                    owner_name: result.ticketData.owner_name,
+                    used_at: result.ticketData.used_at,
+                };
+                setCheckedIn(prev => [newCheckedIn, ...prev]);
+            }
+        } catch (error) {
+            console.error('Verification error:', error);
+            setScanResult({
+                raw,
+                status: 'error',
+                message: 'Failed to verify ticket. Please try again.',
+            });
+        }
     }, [eventId]);
 
-    // QR decode using canvas + jsQR 
+    // QR decode using canvas + jsQR
     const decodeFrame = useCallback(() => {
         if (!videoRef.current || !canvasRef.current) return;
 
@@ -214,7 +309,7 @@ export default function CheckInPage() {
         }
 
         animFrameRef.current = requestAnimationFrame(decodeFrame);
-    }, []);
+    }, [handleScanResult]);
 
 
     // Enumerate available video devices (cameras)
@@ -284,11 +379,6 @@ export default function CheckInPage() {
     }
 
     useEffect(() => () => stopScanner(), []);
-
-    async function handleScanResult(raw: string) {
-        setScanResult({ raw, status: 'verifying' });
-        // Verification logic to be built — placeholder for now
-    }
 
     function formatTime(iso: string) {
         return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -418,17 +508,17 @@ export default function CheckInPage() {
                 </div>
 
                 {/* Main two-column layout */}
-                <div className="flex-1 flex overflow-hidden gap-5 px-6 py-5 mt-5" style={{ height: 'calc(100vh - 57px)' }}>
+                <div className="flex overflow-hidden gap-5 px-6 py-5 mt-5" style={{ height: 'calc(100vh - 90px)' }}>
 
-                    {/* ── LEFT: Checked-in table — wider ── */}
-                    <div className="w-[460px] flex-shrink-0 rounded-2xl flex flex-col bg-[#030303] border border-white/10">
+                    {/* ── LEFT: Checked-in table ── */}
+                    <div className="w-[460px] flex-shrink-0 rounded-2xl flex flex-col bg-[#030303] border border-white/10 h-full">
 
                         {/* Table header */}
                         <div className="flex-shrink-0 px-5 py-4 border-b border-white/10">
                             <div className="flex items-center justify-between mb-1">
                                 <h2 className="text-white/70 text-xs font-black uppercase tracking-widest">Checked In</h2>
                                 <span className="text-[#00e5ff] text-sm font-bold tabular-nums px-2 py-0.5">
-                                    {checkedInCount}
+                                    {checkedIn.length}
                                 </span>
                             </div>
                             {event && (
@@ -462,7 +552,7 @@ export default function CheckInPage() {
                         </div>
 
                         {/* Rows */}
-                        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex-1 overflow-y-auto min-h-0" style={{ scrollbarWidth: 'none' }}>
                             {(() => {
                                 const filtered = checkedIn.filter(t =>
                                     !tableSearch ||
@@ -492,7 +582,7 @@ export default function CheckInPage() {
                                 return filtered.map((ticket, idx) => (
                                     <div
                                         key={ticket.id}
-                                        className={`grid grid-cols-[1fr_1fr_auto] px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors duration-150 ${idx === 0 && !tableSearch ? 'bg-[#00ff88]/3 border-l-2 border-l-[#00ff88]/30' : ''}`}
+                                        className={`grid grid-cols-[1fr_1fr_auto] px-5 py-3 border-b border-white/10 hover:bg-white/2 transition-colors duration-150 ${idx === 0 && !tableSearch ? 'bg-[#00ff88]/3 border-l-2 border-l-[#00ff88]/30' : ''}`}
                                     >
                                         <div className="min-w-0 pr-2">
                                             <p className="text-[#00e5ff]/70 text-[10px] font-mono truncate">{ticket.asset_name}</p>
@@ -516,13 +606,13 @@ export default function CheckInPage() {
                                 <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-white/20 text-[10px] uppercase tracking-widest">Progress</span>
                                     <span className="text-white/40 text-[10px] tabular-nums">
-                                        {checkedInCount} / {event.total_registrations}
+                                        {checkedIn.length} / {event.total_registrations}
                                     </span>
                                 </div>
                                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-[#00ff88] rounded-full transition-all duration-500"
-                                        style={{ width: `${Math.min((checkedInCount / event.total_registrations) * 100, 100)}%` }}
+                                        style={{ width: `${Math.min((checkedIn.length / event.total_registrations) * 100, 100)}%` }}
                                     />
                                 </div>
                             </div>
@@ -530,7 +620,7 @@ export default function CheckInPage() {
                     </div>
 
                     {/* ── RIGHT: Scanner interface ── */}
-                    <div className="flex-1 flex flex-col bg-black rounded-2xl border border-white/10 overflow-hidden">
+                    <div className="flex-1 flex flex-col bg-black rounded-2xl border border-white/10 overflow-hidden h-full">
 
                         {/* Scanner area */}
                         <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 gap-4 relative">
@@ -539,7 +629,7 @@ export default function CheckInPage() {
                             {availableDevices.length > 1 && (
                                 <div className="relative w-full max-w-sm">
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 z-10 pointer-events-none">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                             <path d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.902L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                     </div>
@@ -610,7 +700,7 @@ export default function CheckInPage() {
                                                 </div>
                                                 <div>
                                                     <p className="text-white/40 text-sm font-black uppercase tracking-widest mb-1">Camera Off</p>
-                                                    <p className="text-white/20 text-xs leading-relaxed">Press Start Scanning to activate the camera and begin check-in</p>
+                                                    <p className="text-white/20 text-xs leading-relaxed">Start Scanning to activate the camera and begin check-in</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -673,11 +763,6 @@ export default function CheckInPage() {
                                         onClick={startScanner}
                                         className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#00e5ff] hover:bg-[#33ecff] text-black font-black uppercase tracking-widest text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-[0_8px_32px_rgba(0,229,255,0.25)]"
                                     >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
-                                            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
-                                            <path d="M12 6a6 6 0 100 12A6 6 0 0012 6z" stroke="currentColor" strokeWidth="1.5" />
-                                        </svg>
                                         Start Scanning
                                     </button>
                                 ) : (
@@ -708,7 +793,15 @@ export default function CheckInPage() {
             {scanResult && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
-                    onClick={() => { if (scanResult.status !== 'verifying') setScanResult(null); }}
+                    onClick={() => {
+                        if (scanResult.status !== 'verifying') {
+                            setScanResult(null);
+                            // Restart scanner for next scan
+                            if (!scannerActive) {
+                                startScanner();
+                            }
+                        }
+                    }}
                 >
                     <div
                         className="w-full max-w-sm bg-[#0a0a0a] border border-white/20 rounded-2xl overflow-hidden shadow-2xl"
@@ -717,11 +810,7 @@ export default function CheckInPage() {
                         {/* Modal header */}
                         <div className="px-6 pt-6 pb-4 border-b border-white/10 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                {scanResult.status === 'verifying' ? (
-                                    <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center">
-                                        <div className="w-4 h-4 rounded-full border-2 border-[#00e5ff]/30 border-t-[#00e5ff] animate-spin" />
-                                    </div>
-                                ) : (
+                                {scanResult.status !== 'verifying' && (
                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${scanResult.status === 'success' ? 'bg-[#00ff88]/10 border border-[#00ff88]/20' :
                                         scanResult.status === 'already_used' ? 'bg-[#ffaa00]/10 border border-[#ffaa00]/20' :
                                             'bg-red-500/10 border border-red-500/20'
@@ -732,11 +821,11 @@ export default function CheckInPage() {
                                             </svg>
                                         )}
                                         {scanResult.status === 'already_used' && (
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M8 5v4M8 11h.01" stroke="#ffaa00" strokeWidth="1.5" strokeLinecap="round" />
+                                            <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
+                                                <path d="M8 4v4M8 11h.01" stroke="#ffaa00" strokeWidth="2" strokeLinecap="round" />
                                             </svg>
                                         )}
-                                        {scanResult.status === 'error' && (
+                                        {(scanResult.status === 'error' || scanResult.status === 'invalid_ticket' || scanResult.status === 'not_owned') && (
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                                 <path d="M2 2l12 12M14 2L2 14" stroke="rgb(248,113,113)" strokeWidth="1.5" strokeLinecap="round" />
                                             </svg>
@@ -753,7 +842,9 @@ export default function CheckInPage() {
                                         {scanResult.status === 'verifying' ? 'Verifying...' :
                                             scanResult.status === 'success' ? 'Checked In' :
                                                 scanResult.status === 'already_used' ? 'Already Used' :
-                                                    'Invalid Ticket'}
+                                                    scanResult.status === 'invalid_ticket' ? 'Invalid Ticket' :
+                                                        scanResult.status === 'not_owned' ? 'Not Owned' :
+                                                            'Verification Failed'}
                                     </h3>
                                 </div>
                             </div>
@@ -769,7 +860,7 @@ export default function CheckInPage() {
                             )}
                         </div>
 
-                        {/* Modal body — placeholder for result content */}
+                        {/* Modal body — result content */}
                         <div className="px-6 py-8 flex flex-col items-center justify-center min-h-[200px]">
                             {scanResult.status === 'verifying' ? (
                                 <div className="flex flex-col items-center gap-4 text-center">
@@ -781,23 +872,174 @@ export default function CheckInPage() {
                                     </div>
                                     <div>
                                         <p className="text-white/50 text-sm font-semibold mb-1">Verifying ticket...</p>
-                                        <p className="text-white/20 text-xs">Checking against blockchain and database</p>
                                     </div>
                                     <div className="w-full bg-white/5 rounded-xl px-4 py-2.5">
                                         <p className="text-white/20 text-[10px] font-mono truncate">{scanResult.raw}</p>
                                     </div>
                                 </div>
-                            ) : (
-                                // Result placeholder — to be built
-                                <div className="flex flex-col items-center gap-3 text-center w-full">
-                                    <div className="w-full h-32 bg-white/3 border border-white/6 rounded-xl flex items-center justify-center">
-                                        <p className="text-white/15 text-xs uppercase tracking-widest">Result placeholder</p>
+                            ) : scanResult.status === 'success' && scanResult.ticketData ? (
+                                // Success state — checked in successfully
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-white/50 text-xs font-semibold mb-2">Attendee Details</p>
                                     </div>
+
+                                    {/* Ticket Details Card */}
+                                    <div className="w-full bg-gradient-to-br from-[#00ff88]/8 to-[#00ff88]/3 border border-[#00ff88]/20 rounded-xl p-4 space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Name</p>
+                                                <p className="text-white text-sm font-semibold truncate">{scanResult.ticketData.owner_name}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Email</p>
+                                                <p className="text-[#00e5ff]/70 text-xs font-mono truncate">{scanResult.ticketData.owner_email}</p>
+                                            </div>
+                                        </div>
+
+                                        {scanResult.ticketData.owner_phone && (
+                                            <div>
+                                                <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Phone</p>
+                                                <p className="text-white text-xs font-mono">{scanResult.ticketData.owner_phone}</p>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Ticket ID</p>
+                                            <p className="text-white/60 text-[10px] font-mono truncate">{scanResult.ticketData.asset_name}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Check-in Time</p>
+                                            <p className="text-[#00ff88]/90 text-xs font-semibold">{formatTime(scanResult.ticketData.used_at || new Date().toISOString())}</p>
+                                        </div>
+                                    </div>
+
                                     <button
-                                        onClick={() => setScanResult(null)}
-                                        className="w-full py-3 rounded-xl bg-[#00e5ff] text-black font-black uppercase tracking-widest text-xs hover:bg-[#33ecff] transition-all duration-200 mt-2"
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            if (!scannerActive) {
+                                                startScanner();
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-xl bg-[#00e5ff] text-black font-black uppercase tracking-widest text-xs hover:bg-[#33ecff] transition-all duration-200"
                                     >
                                         Scan Next
+                                    </button>
+                                </div>
+                            ) : scanResult.status === 'already_used' && scanResult.ticketData ? (
+                                // Already used state
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-[#ffaa00]/70 text-xs font-semibold mb-2">Ticket Already Used</p>
+                                        <p className="text-white/30 text-[11px] leading-relaxed text-center">This ticket has already been checked in previously</p>
+                                    </div>
+
+                                    {/* Previous Check-in Details */}
+                                    <div className="w-full bg-gradient-to-br from-[#ffaa00]/8 to-[#ffaa00]/3 border border-[#ffaa00]/20 rounded-xl p-4 space-y-3">
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Attendee</p>
+                                            <p className="text-white text-sm font-semibold">{scanResult.ticketData.owner_name}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Email</p>
+                                            <p className="text-white/60 text-xs font-mono truncate">{scanResult.ticketData.owner_email}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Check-in Time</p>
+                                            <p className="text-[#ffaa00]/90 text-xs font-semibold">
+                                                {scanResult.ticketData.used_at ? formatTime(scanResult.ticketData.used_at) : 'Unknown'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            if (!scannerActive) {
+                                                startScanner();
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/10 hover:text-white transition-all duration-200"
+                                    >
+                                        Scan Next
+                                    </button>
+                                </div>
+                            ) : scanResult.status === 'invalid_ticket' ? (
+                                // Invalid ticket state
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-red-400/80 text-xs font-semibold mb-2">Invalid Ticket</p>
+                                        <p className="text-white/30 text-[11px] leading-relaxed text-center">The scanned QR code does not match a valid ticket for this event</p>
+                                    </div>
+
+                                    <div className="w-full bg-red-500/8 border border-red-500/20 rounded-xl p-4">
+                                        <p className="text-white/40 text-[10px] font-mono text-center break-all">{scanResult.raw}</p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            if (!scannerActive) {
+                                                startScanner();
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/10 hover:text-white transition-all duration-200"
+                                    >
+                                        Scan Again
+                                    </button>
+                                </div>
+                            ) : scanResult.status === 'not_owned' ? (
+                                // Not owned state — ticket exists but not owned by wallet
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-red-400/80 text-xs font-semibold mb-2">Ticket Not Owned</p>
+                                        <p className="text-white/30 text-[11px] leading-relaxed text-center">The ticket NFT is not owned by the registered wallet</p>
+                                    </div>
+
+                                    <div className="w-full bg-red-500/8 border border-red-500/20 rounded-xl p-4 space-y-2">
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Registered Wallet</p>
+                                            <p className="text-white/50 text-[10px] font-mono break-all">{scanResult.ticketData?.owner_wallet}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Ticket ID</p>
+                                            <p className="text-white/50 text-[10px] font-mono">{scanResult.ticketData?.asset_name}</p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            if (!scannerActive) {
+                                                startScanner();
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/10 hover:text-white transition-all duration-200"
+                                    >
+                                        Scan Again
+                                    </button>
+                                </div>
+                            ) : (
+                                // Error state
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-red-400/80 text-xs font-semibold mb-2">Verification Error</p>
+                                        <p className="text-white/30 text-[11px] leading-relaxed text-center">{scanResult.message || 'An error occurred during verification'}</p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setScanResult(null);
+                                            if (!scannerActive) {
+                                                startScanner();
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-widest text-xs hover:bg-white/10 hover:text-white transition-all duration-200"
+                                    >
+                                        Try Again
                                     </button>
                                 </div>
                             )}
@@ -815,15 +1057,14 @@ export default function CheckInPage() {
         }
         
         select option {
-          background-color: #0a0a0a;
+          background-color: #000;
           color: #fff;
           padding: 0.5rem;
         }
         
         select option:checked {
-          background: linear-gradient(#00e5ff, #00e5ff);
-          background-color: #00e5ff;
-          color: #000;
+          background-color: #000;
+          color: #fff;
         }
       `}</style>
         </>

@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
@@ -22,13 +22,35 @@ interface Ticket {
   policy_id: string | null;
 }
 
+interface DashboardEvent {
+  id: string;
+  title: string;
+  event_alias: string;
+  date: string | null;
+  city: string | null;
+  country: string | null;
+  capacity: number | null;
+  total_registrations: number;
+  pricing: string;
+  ticket_price: number | null;
+  cover_image_url: string | null;
+  policy_id: string | null;
+  description: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  registration_deadline: string | null;
+  address: string | null;
+  organizer_name: string | null;
+  organizer_link: string | null;
+}
+
 // Pagination constant: 12 items per page displayed in a 3×4 grid
 const ITEMS_PER_PAGE = 12; // 3 columns × 4 rows
 
 // EventsCarousel: Displays a scrollable carousel of events for the organizer
-function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActiveIndex }: { wallet: any; connected: boolean; onEventSelect?: (event: any) => void; activeIndex: number; setActiveIndex: (index: number) => void }) {
+function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActiveIndex }: { wallet: unknown; connected: boolean; onEventSelect?: (event: DashboardEvent) => void; activeIndex: number; setActiveIndex: (index: number) => void }) {
   // State management for carousel
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<DashboardEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -76,7 +98,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     async function fetchEvents() {
       setLoading(true);
       try {
-        const addr = await wallet.getChangeAddressBech32();
+        const addr = await (wallet as unknown as {getChangeAddressBech32(): Promise<string>}).getChangeAddressBech32();
         const { data } = await supabase
           .from('events')
           .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time, registration_deadline, address, organizer_name, organizer_link')
@@ -106,19 +128,20 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
           
           setEvents(sortedEvents);
         }
-      } catch (e) { console.error(e); }
+      } catch (e: unknown) {
+      console.error(e); }
       setLoading(false);
     }
     fetchEvents();
   }, [connected, wallet]);
 
   // Navigate to a specific carousel index with animation guards
-  function goTo(index: number) {
+  const goTo = useCallback((index: number) => {
     if (isAnimating || index === activeIndex || index < 0 || index >= events.length) return;
     setIsAnimating(true);
     setActiveIndex(index);
     setTimeout(() => setIsAnimating(false), 450);
-  }
+  }, [isAnimating, activeIndex, events.length]);
 
   // Handle mouse wheel scrolling for carousel navigation
   useEffect(() => {
@@ -134,7 +157,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [activeIndex, isAnimating, events.length]);
+  }, [activeIndex, isAnimating, events.length, goTo]);
 
   // Touch handlers for swipe navigation on mobile/tablet devices
   function handleTouchStart(e: React.TouchEvent) {
@@ -182,7 +205,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
         </div>
         <p className="text-white/50 text-base font-black uppercase tracking-tight mb-2">No Events Yet</p>
         <p className="text-white/20 text-sm max-w-xs leading-relaxed mb-8">
-          You haven't created any events. Create your first on-chain event and start issuing NFT tickets.
+          You haven&apos;t created any events. Create your first on-chain event and start issuing NFT tickets.
         </p>
         <Link href="/events/create" className="inline-flex items-center gap-2 bg-[#00e5ff] text-black text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
@@ -288,7 +311,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
 
 // EventCard: Displays individual event information in carousel card format
 function EventCard({ event, active, formatDate }: {
-  event: any;
+  event: DashboardEvent;
   active?: boolean;
   formatDate: (d: string | null) => string;
 }) {
@@ -399,7 +422,7 @@ function EventCard({ event, active, formatDate }: {
 }
 
 function EditPaymentGate({ event, onPaid, onCancel }: {
-  event: any;
+  event: DashboardEvent;
   onPaid: () => void;
   onCancel: () => void;
 }) {
@@ -468,8 +491,9 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
         setTimeout(onPaid, 300);
       }, 800);
 
-    } catch (e: any) {
-      setErrorMsg(e?.message?.includes('cancelled') || e?.message?.includes('user') ? 'Transaction cancelled.' : (e?.message || 'Transaction failed.'));
+    } catch (e: unknown) {
+      const error = e as {message?: string};
+      setErrorMsg(error?.message?.includes('cancelled') || error?.message?.includes('user') ? 'Transaction cancelled.' : (error?.message || 'Transaction failed.'));
       setStatus('error');
     }
   }
@@ -592,10 +616,10 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
 }
 
 function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
-  event: any;
+  event: DashboardEvent;
   onClose: () => void;
-  onSaved: (updated: any) => void;
-  onEventUpdated?: (updated: any) => void;
+  onSaved: (updated: DashboardEvent) => void;
+  onEventUpdated?: (updated: DashboardEvent) => void;
 }) {
   const [form, setForm] = useState({
     description: event.description || '',
@@ -670,8 +694,9 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
       onSaved(data);
       onEventUpdated?.(data);
       handleClose();
-    } catch (e: any) {
-      setError(e.message || 'Failed to save changes.');
+    } catch (e: unknown) {
+      const error = e as {message?: string};
+      setError(error.message || 'Failed to save changes.');
     }
     setSaving(false);
   }
@@ -737,12 +762,12 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>Start Time</label>
+                    <label className={labelClass}>Start Time (24-HRS)</label>
                     <input type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)}
                       className={inputClass} style={{ colorScheme: 'dark' }} />
                   </div>
                   <div>
-                    <label className={labelClass}>End Time</label>
+                    <label className={labelClass}>End Time (24-HRS)</label>
                     <input type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)}
                       className={inputClass} style={{ colorScheme: 'dark' }} />
                   </div>
@@ -849,7 +874,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
   );
 }
 
-function EventManagerDashboard({ event, onBack, onEventUpdated, name }: { event: any; onBack: () => void; onEventUpdated?: (updated: any) => void; name?: string }) {
+function EventManagerDashboard({ event, onBack, onEventUpdated, name }: { event: DashboardEvent; onBack: () => void; onEventUpdated?: (updated: DashboardEvent) => void; name?: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, status: 'upcoming' as 'upcoming' | 'ongoing' | 'ended' });
   const [editStage, setEditStage] = useState<'closed' | 'payment' | 'form'>('closed');
   const [eventData, setEventData] = useState(event);
@@ -1208,7 +1233,7 @@ export default function Dashboard() {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Event detail view state
-  const [selectedEventForDetail, setSelectedEventForDetail] = useState<any | null>(null);
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState<DashboardEvent | null>(null);
 
   // Carousel state to persist position when navigating back
   const [carouselActiveIndex, setCarouselActiveIndex] = useState(0);
@@ -1221,8 +1246,8 @@ export default function Dashboard() {
 
   // Redirect to home if wallet disconnects
   useEffect(() => {
-    if (ready && !connected) router.replace('/');
-  }, [ready, connected]);
+    if (ready && !connected && router.isReady) router.replace('/');
+  }, [ready, connected, router]);
 
   // Fetch user's tickets when tab changes or wallet connects
   useEffect(() => {
@@ -1341,7 +1366,7 @@ export default function Dashboard() {
                       </div>
                       <p className="text-white/50 text-base font-black uppercase tracking-tight mb-2">No Tickets Yet</p>
                       <p className="text-white/20 text-sm max-w-xs leading-relaxed mb-8">
-                        You haven't registered for any events. Explore upcoming events and mint your first NFT ticket.
+                        You haven&apos;t registered for any events. Explore upcoming events and mint your first NFT ticket.
                       </p>
                       <Link
                         href="/events"

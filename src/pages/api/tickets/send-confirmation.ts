@@ -45,10 +45,11 @@ export default async function handler(
       success: true,
       message: 'Confirmation email sent successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error sending confirmation email:', error);
     return res.status(500).json({
-      error: error.message || 'Failed to send confirmation email',
+      error: errorMsg || 'Failed to send confirmation email',
     });
   }
 }

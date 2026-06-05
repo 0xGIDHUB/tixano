@@ -9,6 +9,39 @@ import {
 } from '@meshsdk/core';
 import { getAppliedScript, getPolicyId } from './policy';
 
+interface Asset {
+  unit: string;
+  quantity: string;
+}
+
+interface UTxOInput {
+  txHash: string;
+  outputIndex: number;
+}
+
+interface UTxOOutput {
+  address: string;
+  amount: Asset[];
+}
+
+interface UTxO {
+  input: UTxOInput;
+  output: UTxOOutput;
+}
+
+interface CollateralItem {
+  input: { txHash: string; outputIndex: number };
+  output: { amount: Asset[]; address: string };
+}
+
+interface Wallet {
+  getChangeAddressBech32(): Promise<string>;
+  getUtxosMesh(): Promise<UTxO[]>;
+  getCollateralMesh(): Promise<CollateralItem[] | undefined>;
+  signTxReturnFullTx(tx: string, partial: boolean): Promise<string>;
+  submitTx(tx: string): Promise<string>;
+}
+
 
 function splitMetadataString(str: string, maxLen = 64): string | string[] {
   if (str.length <= maxLen) return str;
@@ -49,7 +82,7 @@ export async function buildMintOwnerTicketTx({
   eventCapacity,
   nftImageUri,
 }: {
-  wallet: any;
+  wallet: Wallet;
   eventUuid: string;
   eventName: string;
   eventTitle: string;
@@ -134,7 +167,7 @@ export async function buildMintAttendeeTicketTx({
   registrationNumber,
   nftImageUri,
 }: {
-  wallet: any;
+  wallet: Wallet;
   eventUuid: string;
   eventAlias: string;
   eventTitle: string;

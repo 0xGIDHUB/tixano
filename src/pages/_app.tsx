@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 
 type CustomAppProps = AppProps & {
-  Component: NextComponentType<NextPageContext, any, any> & {
+  Component: NextComponentType<NextPageContext, Record<string, unknown>, Record<string, unknown>> & {
     hideLayout?: boolean;
   };
 };
@@ -24,7 +24,7 @@ function AutoReconnect() {
         localStorage.removeItem('tixano_wallet');
       });
     }
-  }, []);
+  }, [connected, connect]);
 
   return null;
 }

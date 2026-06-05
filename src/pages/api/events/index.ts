@@ -10,7 +10,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     eventId,          // ← the UUID generated on frontend
     walletAddress,
     policyId,
-    txHash,
     title,
     eventAlias,
     description,

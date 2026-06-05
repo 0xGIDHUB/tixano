@@ -5,7 +5,6 @@ export async function waitForConfirmation(
   maxAttempts = 30,
   intervalMs = 5000
 ): Promise<boolean> {
-  const network = 'preprod';
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await fetch(

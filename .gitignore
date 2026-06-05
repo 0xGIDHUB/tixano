@@ -54,3 +54,5 @@ docs/
 
 gmail-credentials.json
 generate-gmail-token.js
+
+DEPLOYMENT.md

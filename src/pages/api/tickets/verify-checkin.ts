@@ -108,13 +108,12 @@ export default async function handler(
 
           // Check if the specific NFT (policy_id + asset_name) exists in UTXOs
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const ownsNFT = utxos.some((utxo: any) => {
+          const ownsNFT = utxos.some((utxo: Record<string, unknown>) => {
             if (!utxo.amount) return false;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             // Parse the full asset identifier (policy_id.asset_name)
             const hexAssetName = Buffer.from(ticket.asset_name || '', 'utf8').toString('hex');
             const expectedUnit = `${ticket.policy_id}${hexAssetName}`;
-            return utxo.amount.some((amount: any) => amount.unit === expectedUnit);
+            return (utxo.amount as {unit: string}[]).some((amount: {unit: string}) => amount.unit === expectedUnit);
           });
 
           if (!ownsNFT) {

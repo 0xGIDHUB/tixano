@@ -24,7 +24,7 @@ export default function WalletConnectButton() {
       try {
         await navigator.clipboard.writeText(address);
         showToast('Address copied to clipboard!', { title: 'Success', type: 'success', duration: 3000 });
-      } catch (err) {
+      } catch {
         showToast('Failed to copy address', { title: 'Error', type: 'error', duration: 3000 });
       }
     }
@@ -47,8 +47,10 @@ export default function WalletConnectButton() {
     try {
       await connect(walletId);
 
-      const walletApi = await (window as any).cardano[walletId].enable();
-      const networkId = await walletApi.getNetworkId();
+      const cardano = (window as unknown as Record<string, unknown>).cardano as Record<string, {enable?: () => Promise<Record<string, unknown>>}> | undefined;
+      const wallet = cardano ? cardano[walletId] : undefined;
+      const walletApi = wallet && wallet.enable ? await wallet.enable() : undefined;
+      const networkId = await (walletApi as {getNetworkId: () => Promise<number>}).getNetworkId();
 
       if (networkId !== CARDANO_NETWORK_ID) {
         disconnect();

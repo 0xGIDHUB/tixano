@@ -63,9 +63,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         confirmed = true;
         break;
-      } catch (verifyErr: any) {
+      } catch (verifyErr: unknown) {
         // Re-throw verification failures immediately — no point retrying
-        if (verifyErr.message?.includes('Payment verification')) {
+        if (verifyErr instanceof Error && verifyErr.message?.includes('Payment verification')) {
           return res.status(400).json({ error: verifyErr.message });
         }
         // Network errors just continue polling
@@ -79,10 +79,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ success: true, txHash });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : 'Failed to confirm transaction';
     console.error('Transaction confirmation error:', error);
     return res.status(500).json({
-      error: error?.message || 'Failed to confirm transaction',
+      error: errorMsg,
     });
   }
 }

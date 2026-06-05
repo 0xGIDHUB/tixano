@@ -94,11 +94,10 @@ export default function CreateEvent() {
 
     // Only redirect after rehydration window has passed
     useEffect(() => {
-        if (ready && !connected) {
-            router.replace('/');
-        }
-    }, [ready, connected]);
-
+    if (ready && !connected && router.isReady) {
+      router.replace('/');
+    }
+  }, [ready, connected, router]);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -429,11 +428,12 @@ export default function CreateEvent() {
                 router.push(`/events/${redirectId}`);
             }, 8000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const error = err as {message?: string};
             console.error(err);
             setSubmitting(false);
             setProcessingStep(null);
-            setSubmitError(err.message || 'Something went wrong');
+            setSubmitError(error.message || 'Something went wrong');
         }
     };
 
@@ -637,7 +637,7 @@ export default function CreateEvent() {
                                 {/* Start + End Time */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className={labelClass}>Start Time</label>
+                                        <label className={labelClass}>Start Time (24-HRS)</label>
                                         <input
                                             type="time"
                                             name="startTime"
@@ -648,7 +648,7 @@ export default function CreateEvent() {
                                         />
                                     </div>
                                     <div>
-                                        <label className={labelClass}>End Time</label>
+                                        <label className={labelClass}>End Time (24-HRS)</label>
                                         <input
                                             type="time"
                                             name="endTime"

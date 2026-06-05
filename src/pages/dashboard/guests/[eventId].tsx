@@ -1,6 +1,5 @@
 import Head from 'next/head';
-import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
@@ -30,7 +29,7 @@ interface EventInfo {
 export default function GuestsPage() {
   const router = useRouter();
   const { eventId } = router.query;
-  const { connected, wallet } = useWallet();
+  const { connected } = useWallet();
   const [ready, setReady] = useState(false);
 
   const [event, setEvent] = useState<EventInfo | null>(null);
@@ -62,10 +61,10 @@ export default function GuestsPage() {
 
   // Only redirect after rehydration window has passed
   useEffect(() => {
-    if (ready && !connected) {
+    if (ready && !connected && router.isReady) {
       router.replace('/');
     }
-  }, [ready, connected]);
+  }, [ready, connected, router]);
 
   useEffect(() => {
     if (!eventId || typeof eventId !== 'string') return;
@@ -138,10 +137,6 @@ export default function GuestsPage() {
 
   function formatTime(d: string) {
     return new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function truncateWallet(w: string) {
-    return `${w.slice(0, 8)}...${w.slice(-6)}`;
   }
 
   const SortIcon = ({ col }: { col: typeof sortBy }) => (

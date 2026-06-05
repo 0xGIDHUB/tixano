@@ -20,7 +20,6 @@ export default async function handler(
         const {
             bannerImageBase64,
             ticketId,
-            eventTitle,
             eventAlias,
         } = req.body;
 
@@ -252,13 +251,14 @@ export default async function handler(
 
         return res.status(200).json({ ipfsUri });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const errorObj = err as {message?: string; stack?: string};
         console.error(
             'Ticket NFT image generation error:',
-            err.message,
-            err.stack
+            errorObj.message,
+            errorObj.stack
         );
 
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: errorObj.message });
     }
 }

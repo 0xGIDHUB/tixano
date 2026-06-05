@@ -31,9 +31,9 @@ export async function uploadImageToIPFS(
     const data = await res.json();
     return `ipfs://${data.IpfsHash}`;
 
-  } catch (err: any) {
+  } catch (err: Error | {name: string} | unknown) {
     clearTimeout(timeout);
-    if (err.name === 'AbortError') {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error('Pinata upload timed out. Check your internet connection.');
     }
     throw err;

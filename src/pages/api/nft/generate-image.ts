@@ -58,8 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ ipfsUri });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error';
     console.error('NFT image generation error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: errorMsg });
   }
 }

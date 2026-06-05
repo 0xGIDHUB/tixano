@@ -45,7 +45,7 @@ tixano/
 │                                          Webpack config, env vars, redirects, API routes
 ├── package.json                        ← Project dependencies and npm scripts
 │                                          Scripts: dev, build, start, lint
-│                                          Dependencies: Next.js, React, MeshJS, Supabase, googleapis, etc.
+│                                          Dependencies: Next.js, React, MeshJS, Supabase,googleapis, jsqr, etc.
 ├── package-lock.json                   ← Locked dependency versions
 │                                          Ensures consistent installs across machines
 │
@@ -57,12 +57,14 @@ tixano/
 │
 ├── README.md                           ← Project documentation & setup instructions
 ├── generate-gmail-token.js             ← Utility script to generate Gmail OAuth tokens
+├── build.log                           ← Build output log (generated)
 │
 ├── gmail-credentials.json               ← Gmail OAuth credentials (don't commit)
 │                                          Used by Gmail service for sending emails
 │
 ├── .git/                               ← Git repository metadata (version control)
 ├── .next/                              ← Build output directory (generated, don't commit)
+├── .vercel/                            ← Vercel configuration (optional, generated on deploy)
 ├── node_modules/                       ← Installed dependencies (generated, don't commit)
 │
 ```
@@ -132,6 +134,7 @@ src/
 │   │   │   ├── index.ts                ← GET/POST tickets (create, list)
 │   │   │   ├── claim-number.ts         ← Claim a ticket endpoint
 │   │   │   ├── release-number.ts       ← Release/return a ticket endpoint
+│   │   │   ├── verify-checkin.ts       ← Verify ticket ownership & check-in status endpoint
 │   │   │   └── send-confirmation.ts    ← Send ticket confirmation email
 │   │   │
 │   │   └── transactions/
@@ -139,6 +142,8 @@ src/
 │   │
 │   ├── dashboard/                      ← Dashboard pages (event organizer)
 │   │   ├── index.tsx                   ← Dashboard overview
+│   │   ├── checkin/
+│   │   │   └── [eventId].tsx           ← Event check-in verification interface (dynamic)
 │   │   └── guests/
 │   │       └── [eventId].tsx           ← View guests for specific event (dynamic)
 │   │
@@ -293,7 +298,8 @@ Configuration files (tsconfig, next.config, etc.)
 1. **Event Creation**: User creates event → API stores in Supabase
 2. **Ticket Minting**: Admin initiates → Smart contract mints NFT → Image uploaded to IPFS
 3. **Ticket Claim**: User claims ticket → Confirmation email sent via Gmail
-4. **Wallet Integration**: MeshJS connects to Cardano wallets
+4. **Ticket Check-in**: Organizer scans QR code → System verifies ticket ownership and status → Check-in recorded
+5. **Wallet Integration**: MeshJS connects to Cardano wallets
 
 ---
 
@@ -301,12 +307,13 @@ Configuration files (tsconfig, next.config, etc.)
 
 | Type | Count | Location | Purpose |
 |------|-------|----------|---------|
-| TypeScript/TSX | ~30+ | src/ | React components, API routes, utilities |
+| TypeScript/TSX | ~37+ | src/ | React components, API routes, utilities |
 | Aiken | ~3 | contracts/lib & validators/ | Smart contract logic |
 | JSON | ~5+ | Root, src/lib/cardano/, contracts/ | Config, compiled scripts, manifests |
 | CSS | 1 | src/styles/ | Global Tailwind styles |
-| Markdown | 4+ | Root, setup/, mail/, contracts/ | Documentation |
+| Markdown | 5+ | Root, setup/, mail/, contracts/ | Documentation |
 | PNG/SVG/ICO | 7 | public/ | Branding assets |
+| Logs | 1 | Root | Build and deployment logs |
 
 ---
 

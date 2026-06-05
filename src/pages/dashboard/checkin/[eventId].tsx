@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useWallet } from '@meshsdk/react';
@@ -102,7 +101,7 @@ export default function CheckInPage() {
         if (router.isReady) {
             attemptConnect();
         }
-    }, [router.isReady, router.query.wallet]);
+    }, [router.isReady, router.query.wallet, connected, wallet, walletReady]);
 
     // Security gate — verify wallet is connected AND matches event owner
     const verifyAccess = useCallback(async () => {
@@ -144,7 +143,7 @@ export default function CheckInPage() {
             }
 
             setAuthStatus('authorized');
-        } catch (err) {
+        } catch {
             setAuthStatus('not_owner');
             setAuthMessage('Verification failed. Please try again.');
         }
@@ -327,7 +326,7 @@ export default function CheckInPage() {
             }
         }
         getDevices();
-    }, []);
+    }, [selectedDeviceId]);
 
 
     async function startScanner() {
@@ -356,11 +355,12 @@ export default function CheckInPage() {
             cancelAnimationFrame(animFrameRef.current);
             animFrameRef.current = requestAnimationFrame(decodeFrame);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const cameraErr = err as {name: string};
             setCameraError(
-                err.name === 'NotAllowedError'
+                cameraErr.name === 'NotAllowedError'
                     ? 'Camera access denied. Please allow camera permissions and try again.'
-                    : err.name === 'NotFoundError'
+                    : cameraErr.name === 'NotFoundError'
                         ? 'No camera found on this device.'
                         : 'Failed to start camera. Please try again.'
             );
@@ -575,7 +575,7 @@ export default function CheckInPage() {
                                 if (filtered.length === 0) return (
                                     <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8">
                                         <p className="text-white/20 text-xs font-black uppercase tracking-tight mb-1">No results</p>
-                                        <p className="text-white/10 text-[10px]">No tickets match "{tableSearch}"</p>
+                                        <p className="text-white/10 text-[10px]">No tickets match &quot;{tableSearch}&quot;</p>
                                     </div>
                                 );
 

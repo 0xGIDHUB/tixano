@@ -353,7 +353,7 @@ export default function EventDetail() {
                 }),
             });
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
 
             // Only release the number if the mint was never submitted.
@@ -372,7 +372,8 @@ export default function EventDetail() {
 
             setRegistering(false);
             setProcessingStep(null);
-            showToast(err.message || 'Registration failed. Please try again.', {
+            const errorMessage = (err as {message?: string}).message || 'Registration failed. Please try again.';
+            showToast(errorMessage, {
                 title: 'Error',
                 type: 'error',
                 duration: 8000,

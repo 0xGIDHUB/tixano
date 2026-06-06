@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/useToast';
 import { buildMintAttendeeTicketTx, getAttendeeTokenName} from '@/lib/cardano/mint';
 import { waitForConfirmation } from '@/lib/cardano/verify';
 import { generateTicketImage } from '@/lib/ipfs/generateTicketImage';
-import { ThreeDot } from "react-loading-indicators";
+import { OrbitProgress } from "react-loading-indicators";
 
 interface Event {
     id: string;
@@ -758,11 +758,11 @@ export default function EventDetail() {
 
                         {/* Loading Animation */}
                         <div className="flex items-center justify-center mb-8 mt-8 w-full">
-                            <ThreeDot color="#00e5ff" size="small" text="" textColor="" />
+                            <OrbitProgress variant="disc" dense color="#00e5ff" size="small" text="" textColor="" />
                         </div>
 
                         <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
-                            {processingStep === 'signing' && 'Waiting for Signature'}
+                            {processingStep === 'signing' && 'Building Transaction'}
                             {processingStep === 'confirming' && 'Confirming Transaction'}
                             {processingStep === 'saving' && 'Almost Done'}
                             {!processingStep && 'Processing...'}

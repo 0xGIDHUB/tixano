@@ -10,7 +10,8 @@ import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
 import { getEventPrice } from '@/lib/cardano/mint';
 import { generateNftImage } from '@/lib/ipfs/generateNftImage';
-import { ThreeDot } from "react-loading-indicators";
+import { OrbitProgress } from "react-loading-indicators";
+
 
 type PricingType = 'free' | 'paid';
 
@@ -39,7 +40,6 @@ const COUNTRIES = [
     'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
     'Uzbekistan', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
 ];
-
 
 
 interface FormData {
@@ -85,19 +85,11 @@ export default function CreateEvent() {
         ).slice(0, 6)
         : [];
 
-
     // Wait for MeshJS to rehydrate before checking wallet state
     useEffect(() => {
         const timer = setTimeout(() => setReady(true), 800);
         return () => clearTimeout(timer);
     }, []);
-
-    // Only redirect after rehydration window has passed
-    useEffect(() => {
-    if (ready && !connected && router.isReady) {
-      router.replace('/');
-    }
-  }, [ready, connected, router]);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -823,10 +815,10 @@ export default function CreateEvent() {
 
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={submitting || !connected}
                                     className="w-full mt-2 bg-[#00e5ff] text-black font-black uppercase tracking-[0.1em] py-4 rounded-lg text-sm hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                                 >
-                                    {submitting ? submitStatus || 'Processing...' : 'Create Event'}
+                                    {!connected ? 'Connect Wallet to Create Event' : (submitting ? submitStatus || 'Processing...' : 'Create Event')}
                                 </button>
 
                                 {toast && (
@@ -1068,11 +1060,11 @@ export default function CreateEvent() {
 
                         {/* Loading Animation */}
                         <div className="flex items-center justify-center mb-8 mt-8 w-full">
-                            <ThreeDot color="#00e5ff" size="small" text="" textColor="" />
+                            <OrbitProgress variant="disc" dense color="#00e5ff" size="small" text="" textColor="" />
                         </div>
 
                         <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
-                            {processingStep === 'signing' && 'Waiting for Signature'}
+                            {processingStep === 'signing' && 'Building Transaction'}
                             {processingStep === 'confirming' && 'Transaction Processing'}
                             {processingStep === 'uploading' && 'Uploading Images'}
                             {processingStep === 'saving' && 'Almost Done'}
@@ -1081,7 +1073,7 @@ export default function CreateEvent() {
 
                         <p className="text-white/40 text-sm leading-relaxed mb-6">
                             {processingStep === 'signing' &&
-                                'Please sign the transaction in your wallet to proceed.'}
+                                'Please sign the transaction in your wallet to create your event.'}
                             {processingStep === 'confirming' &&
                                 'Your transaction has been submitted and is being confirmed on the Cardano blockchain. This may take 30–60 seconds. Please do not close or refresh this page.'}
                             {processingStep === 'uploading' &&

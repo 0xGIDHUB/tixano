@@ -224,15 +224,7 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
-                  if (!connected) {
-                    showToast('Connect your wallet to create an event', {
-                      title: 'Wallet Required',
-                      type: 'info',
-                      duration: 5000,
-                    });
-                  } else {
-                    window.location.href = '/events/create';
-                  }
+                  window.location.href = '/events/create';
                 }}
                 className="inline-flex items-center bg-[#00e5ff] text-black text-[12px] md:text-[13px] font-bold pl-6 md:pl-7 pr-5 md:pr-6 py-3 md:py-3.5 rounded-md uppercase tracking-[0.06em] transition-all duration-300 group hover:pr-9 md:hover:pr-10 cursor-pointer"
               >

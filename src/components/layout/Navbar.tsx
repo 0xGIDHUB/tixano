@@ -136,13 +136,7 @@ export default function Navbar() {
           {/* Center Nav Links — Dashboard removed from here */}
           <div className="hidden md:flex items-center gap-8">
             <NavLink href="/events" label="Explore Events" />
-            <ProtectedLink
-              href="/events/create"
-              label="Create Events"
-              connected={connected}
-              message="Connect wallet to create events"
-              onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
-            />
+            <NavLink href="/events/create" label="Create Events" />
             <NavLink href="/about" label="About" />
           </div>
 

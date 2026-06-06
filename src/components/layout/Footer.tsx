@@ -23,10 +23,7 @@ export default function Footer() {
               <Link href="/" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
                 Home
               </Link>
-              <Link href="/about" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
-                About
-              </Link>
-              <Link href="/events" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
+              <Link href="/" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
                 Help
               </Link>
             </nav>

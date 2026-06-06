@@ -122,7 +122,7 @@ export default function Navbar() {
           }
         `}
       >
-        <nav className="max-w-7xl mx-auto flex items-center justify-between">
+        <nav className="max-w-full mx-auto flex items-center justify-between relative">
 
           {/* Logo */}
           <Link href="/">
@@ -133,8 +133,8 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Center Nav Links — Dashboard removed from here */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Center Nav Links */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
             <NavLink href="/events" label="Explore Events" />
             <NavLink href="/events/create" label="Create Events" />
             <NavLink href="/about" label="About" />

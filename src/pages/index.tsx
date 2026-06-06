@@ -226,7 +226,7 @@ export default function Home() {
                 onClick={() => {
                   window.location.href = '/events/create';
                 }}
-                className="inline-flex items-center bg-[#00e5ff] text-black text-[12px] md:text-[13px] font-bold pl-6 md:pl-7 pr-5 md:pr-6 py-3 md:py-3.5 rounded-md uppercase tracking-[0.06em] transition-all duration-300 group hover:pr-9 md:hover:pr-10 cursor-pointer"
+                className="inline-flex items-center bg-[#00e5ff] text-black text-[12px] md:text-[13px] font-bold pl-6 md:pl-7 pr-5 md:pr-6 py-3 md:py-3.5 rounded-md uppercase tracking-[0.06em] transition-all duration-300 group hover:-translate-y-1 cursor-pointer"
               >
                 Create Your First Event
                 <svg
@@ -234,7 +234,7 @@ export default function Home() {
                   height="16"
                   viewBox="0 0 16 16"
                   fill="none"
-                  className="ml-2 transition-transform duration-300 group-hover:translate-x-3"
+                  className="ml-2 transition-transform duration-300 group-hover:translate-x-1"
                 >
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

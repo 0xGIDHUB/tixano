@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/useToast';
 
 function NavLink({ href, label }: { href: string; label: string }) {
   const { pathname } = useRouter();
-  const isActive = pathname === href;  // ← exact match only
+  const isActive = pathname === href;
 
   return (
     <Link
@@ -32,7 +32,7 @@ function ProtectedLink({ href, label, connected, message, onBlock }: {
   onBlock: (message: string) => void;
 }) {
   const { pathname } = useRouter();
-  const isActive = pathname === href;  // ← exact match only
+  const isActive = pathname === href;
 
   const handleClick = (e: React.MouseEvent) => {
     if (!connected) {
@@ -52,6 +52,48 @@ function ProtectedLink({ href, label, connected, message, onBlock }: {
         }`}
     >
       {label}
+    </Link>
+  );
+}
+
+function DashboardButton({ connected, onBlock }: {
+  connected: boolean;
+  onBlock: (message: string) => void;
+}) {
+  const { pathname } = useRouter();
+  const isActive = pathname === '/dashboard' || pathname.startsWith('/dashboard');
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!connected) {
+      e.preventDefault();
+      onBlock('Connect your wallet to access your dashboard.');
+    }
+  };
+
+  return (
+    <Link
+      href="/dashboard"
+      onClick={handleClick}
+      title="Dashboard"
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[11px] font-semibold uppercase tracking-wider transition-all duration-200
+  ${isActive
+          ? 'border-[#00e5ff]/50 bg-[#00e5ff]/10 text-[#00e5ff]'
+          : 'border-white/10 bg-white/4 text-white/50 hover:border-[#00e5ff]/40 hover:bg-[#00e5ff]/8 hover:text-[#00e5ff]'
+        }`}
+        // className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold uppercase tracking-widest transition-all duration-200
+        // ${isActive
+        //   ? 'border-[#00e5ff]/50 bg-[#00e5ff]/10 text-[#00e5ff]'
+        //   : 'border-white/10 bg-white/4 text-white/50 hover:border-[#00e5ff]/40 hover:bg-[#00e5ff]/8 hover:text-[#00e5ff]'
+        // }`}
+    >
+      {/* Dashboard grid icon */}
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+        <rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+        <rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+        <rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+      </svg>
+      <span className="hidden sm:inline">Dashboard</span>
     </Link>
   );
 }
@@ -91,7 +133,7 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Nav Links */}
+          {/* Center Nav Links — Dashboard removed from here */}
           <div className="hidden md:flex items-center gap-8">
             <NavLink href="/events" label="Explore Events" />
             <ProtectedLink
@@ -101,18 +143,15 @@ export default function Navbar() {
               message="Connect wallet to create events"
               onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
             />
-            <ProtectedLink
-              href="/dashboard"
-              label="Dashboard"
-              connected={connected}
-              message="Connect wallet to view your dashboard"
-              onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
-            />
             <NavLink href="/about" label="About" />
           </div>
 
-          {/* Wallet Connect Button */}
-          <div className="flex items-center">
+          {/* Right: Dashboard button + Wallet button */}
+          <div className="flex items-center gap-3">
+            <DashboardButton
+              connected={connected}
+              onBlock={(msg) => showToast(msg, { title: 'Wallet Required', type: 'info', duration: 5000 })}
+            />
             <WalletConnectButton />
           </div>
 

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FaEnvelope } from 'react-icons/fa';
+import { FaEnvelope, FaDiscord } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -35,14 +35,14 @@ export default function Footer() {
           {/* Right: socials */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <a
-              href="mailto:tixano.dapp@gmail.com"
+              href="mailto:tixanonchain@gmail.com"
               aria-label="Email"
               className="text-white/30 hover:text-[#00e5ff] transition-colors duration-200"
             >
               <FaEnvelope size={20} />
             </a>
             <a
-              href="https://twitter.com/tixano"
+              href="https://x.com/tixanonchain"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Twitter / X"
@@ -51,6 +51,15 @@ export default function Footer() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.89 1.5H22.5L14.51 10.35L24 22.5H16.62L10.88 15.73L4.12 22.5H0.51L8.91 13.27L0 1.5H7.59L12.89 7.76L18.89 1.5ZM17.05 20.68H19.39L6.31 3.77H3.8L17.05 20.68Z" />
               </svg>
+            </a>
+            <a
+              href="https://discord.gg/tixano"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord"
+              className="text-white/30 hover:text-[#00e5ff] transition-colors duration-200"
+            >
+              <FaDiscord size={22} />
             </a>
           </div>
 

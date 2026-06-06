@@ -509,7 +509,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-white/6">
+        <div className="px-6 pt-6 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center flex-shrink-0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -527,7 +527,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
         <div className="px-6 py-5 flex flex-col gap-4">
 
           {/* Fee breakdown */}
-          <div className="bg-black/40 border border-white/6 rounded-xl overflow-hidden">
+          <div className="bg-black/40 border border-white/10 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
               <span className="text-white/40 text-xs">Edit event fee</span>
               <span className="text-white font-black text-sm">₳ 5.00</span>
@@ -539,8 +539,8 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
           </div>
 
           {/* Info note */}
-          <div className="flex items-start gap-2.5 bg-white/3 border border-white/8 rounded-xl px-3 py-2.5">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+          <div className="flex items-start gap-2.5 bg-white/3 border border-white/20 rounded-xl px-3 py-2.5">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
               <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
               <path d="M12 8v4M12 16h.01" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
@@ -588,7 +588,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
           >
             {status === 'idle' || status === 'error' ? (
               <>
-                Pay ₳ 5
+                Pay
               </>
             ) : status === 'signing' ? (
               <>

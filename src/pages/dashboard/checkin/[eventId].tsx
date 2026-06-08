@@ -1,8 +1,7 @@
 import Head from 'next/head';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { useWallet } from '@meshsdk/react';
-import { MeshCardanoBrowserWallet } from '@meshsdk/wallet';
+import { useWallet, useWalletList } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
 import jsQR from 'jsqr';
 
@@ -41,7 +40,8 @@ interface ScanResult {
 export default function CheckInPage() {
     const router = useRouter();
     const { eventId } = router.query;
-    const { connected, wallet } = useWallet();
+    const { connected, wallet, connect } = useWallet();
+    const availableWallets = useWalletList();
 
     const [authStatus, setAuthStatus] = useState<'checking' | 'authorized' | 'no_wallet' | 'not_owner'>('checking');
     const [authMessage, setAuthMessage] = useState<string>('');
@@ -83,10 +83,10 @@ export default function CheckInPage() {
                 return;
             }
             try {
-                const installedWallets = MeshCardanoBrowserWallet.getInstalledWallets();
-                const walletExists = installedWallets.some(w => w.name.toLowerCase() === walletName.toLowerCase());
-                if (walletExists) {
-                    await MeshCardanoBrowserWallet.enable(walletName);
+                // Find the wallet by name
+                const targetWallet = availableWallets.find(w => w.name.toLowerCase() === walletName.toLowerCase());
+                if (targetWallet) {
+                    await connect(targetWallet.id);
                     // Give MeshJS a moment to propagate the connected state into useWallet
                     await new Promise(r => setTimeout(r, 800));
                 }
@@ -101,7 +101,7 @@ export default function CheckInPage() {
         if (router.isReady) {
             attemptConnect();
         }
-    }, [router.isReady, router.query.wallet, connected, wallet, walletReady]);
+    }, [router.isReady, router.query.wallet, connected, wallet, walletReady, availableWallets, connect]);
 
     // Security gate — verify wallet is connected AND matches event owner
     const verifyAccess = useCallback(async () => {

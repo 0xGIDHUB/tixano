@@ -3,15 +3,55 @@ import { createCanvas, loadImage, registerFont } from 'canvas';
 import path from 'path';
 import QRCode from 'qrcode';
 import { uploadImageToIPFS } from '@/lib/ipfs/pinata';
+import fs from 'fs';
 
-// Register system fonts for Alpine Linux (Vercel)
-try {
-  // These are standard system fonts available in most Linux distributions
-  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', { family: 'DejaVu Sans', weight: 'bold' });
-  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', { family: 'DejaVu Sans' });
-} catch (e) {
-  // Font registration might fail in local dev, but should work on Vercel
-  console.warn('Font registration failed - using canvas defaults');
+// Register system fonts with multiple fallback paths for cross-platform support
+let fontLoaded = false;
+
+// Try different font paths for different environments
+const fontPaths = [
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', // Alpine Linux / Vercel
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf', // Alternative Linux
+  '/System/Library/Fonts/Helvetica.ttc', // macOS
+  'C:\\Windows\\Fonts\\arial.ttf', // Windows
+];
+
+const regularFontPaths = [
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+  '/System/Library/Fonts/Helvetica.ttc',
+  'C:\\Windows\\Fonts\\arial.ttf',
+];
+
+// Register bold font
+for (const fontPath of fontPaths) {
+  try {
+    if (fs.existsSync(fontPath)) {
+      registerFont(fontPath, { family: 'CustomFont', weight: 'bold' });
+      fontLoaded = true;
+      console.log(`Loaded bold font from: ${fontPath}`);
+      break;
+    }
+  } catch (e) {
+    // Continue to next path
+  }
+}
+
+// Register regular font
+for (const fontPath of regularFontPaths) {
+  try {
+    if (fs.existsSync(fontPath)) {
+      registerFont(fontPath, { family: 'CustomFont', weight: 'normal' });
+      console.log(`Loaded regular font from: ${fontPath}`);
+      break;
+    }
+  } catch (e) {
+    // Continue to next path
+  }
+}
+
+if (!fontLoaded) {
+  console.warn('No system fonts could be loaded - using canvas defaults');
 }
 
 export const config = {
@@ -90,7 +130,7 @@ export default async function handler(
 
         // Asset name text
         ctx.fillStyle = '#00E5FF';
-        ctx.font = 'bold 22px "DejaVu Sans"';
+        ctx.font = 'bold 22px "CustomFont"';
         ctx.textAlign = 'center';
         ctx.fillText((req.body.assetName || `TXNT-${eventAlias}`).toUpperCase(), W / 2, titleY + 35);
 
@@ -223,7 +263,7 @@ export default async function handler(
 
         // POWERED BY CARDANO
         ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-        ctx.font = '18px "DejaVu Sans"';
+        ctx.font = '18px "CustomFont"';
         ctx.textAlign = 'left';
 
         ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);

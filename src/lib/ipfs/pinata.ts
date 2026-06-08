@@ -1,10 +1,17 @@
 export async function uploadImageToIPFS(
-  imageBuffer: Buffer,
+  imageData: Buffer | Blob,
   fileName: string
 ): Promise<string> {
   const formData = new FormData();
-  const blob = new Blob([new Uint8Array(imageBuffer)], { type: 'image/png' });
-  formData.append('file', blob, fileName);
+  
+  // Handle both Buffer (from server) and Blob (from browser)
+  if (imageData instanceof Blob) {
+    formData.append('file', imageData, fileName);
+  } else {
+    const blob = new Blob([new Uint8Array(imageData)], { type: 'image/png' });
+    formData.append('file', blob, fileName);
+  }
+  
   formData.append('pinataMetadata', JSON.stringify({ name: fileName }));
   formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
 

@@ -1,14 +1,12 @@
 import { useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useWallet } from '@meshsdk/react';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { connected } = useWallet();
-  const { toast, showToast, closeToast } = useToast();
+  const { toast, closeToast } = useToast();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -241,7 +239,7 @@ export default function Home() {
               </button>
 
               <Link
-                href="/events"
+                href="/about"
                 className="inline-flex items-center border border-white/30 text-white/70 hover:text-white hover:border-white/60 text-[12px] md:text-[13px] font-bold px-6 md:px-7 py-3 md:py-3.5 rounded-md uppercase tracking-[0.06em] transition-all duration-200"
               >
                 Learn More

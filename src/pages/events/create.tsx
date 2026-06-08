@@ -66,7 +66,6 @@ export default function CreateEvent() {
     const router = useRouter();
 
     const { connected, wallet } = useWallet();
-    const [ready, setReady] = useState(false);
     const { toast, showToast, closeToast } = useToast();
     const [submitting, setSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState('');
@@ -85,11 +84,6 @@ export default function CreateEvent() {
         ).slice(0, 6)
         : [];
 
-    // Wait for MeshJS to rehydrate before checking wallet state
-    useEffect(() => {
-        const timer = setTimeout(() => setReady(true), 800);
-        return () => clearTimeout(timer);
-    }, []);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);

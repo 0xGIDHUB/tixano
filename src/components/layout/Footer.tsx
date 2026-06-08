@@ -3,34 +3,33 @@ import { FaEnvelope, FaDiscord } from 'react-icons/fa';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-black">
+    <footer className="border-t border-white/5 bg-black">
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Main row */}
-        <div className="flex items-center justify-between py-6 gap-6">
+        <div className="flex items-center justify-between py-6 gap-6 relative">
 
-          {/* Left: Logo + nav links inline */}
-          <div className="flex items-center gap-8 min-w-0">
-            <Link href="/" className="flex-shrink-0">
-              <img
-                src="/Tixano Logo.png"
-                alt="TIXANO"
-                className="h-4 w-auto object-contain"
-              />
+          {/* Left: nav links */}
+          <nav className="hidden sm:flex items-center gap-6">
+            <Link href="/" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
+              Home
             </Link>
+            <Link href="/about" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
+              About
+            </Link>
+          </nav>
 
-            <nav className="hidden sm:flex items-center gap-6">
-              <Link href="/" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
-                Home
-              </Link>
-              <Link href="/" className="text-white/40 hover:text-[#00e5ff] text-xs transition-colors duration-200">
-                Help
-              </Link>
-            </nav>
-          </div>
+          {/* Center: Logo - absolutely centered */}
+          <Link href="/" className="flex-shrink-0 absolute left-1/2 transform -translate-x-1/2">
+            <img
+              src="/Tixano Icon.png"
+              alt="TIXANO"
+              className="h-4 w-auto object-contain"
+            />
+          </Link>
 
           {/* Right: socials */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-4 flex-shrink-0 ml-auto">
             <a
               href="mailto:tixanonchain@gmail.com"
               aria-label="Email"

@@ -13,6 +13,9 @@ export default function WalletConnectButton() {
   const [showDisconnect, setShowDisconnect] = useState(false);
   const { toast, showToast, closeToast } = useToast();
 
+  // Filter out Brave wallet as it's not a Cardano wallet
+  const filteredWallets = wallets.filter((w) => w.id !== 'brave');
+
   const truncateAddress = (addr: string | undefined) => {
     if (!addr) return '';
     return `${addr.slice(0, 8)}...${addr.slice(-4)}`;
@@ -150,7 +153,7 @@ export default function WalletConnectButton() {
               </button>
             </div>
 
-            {wallets.length === 0 ? (
+            {filteredWallets.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-2">
                 <p className="text-center text-white/40 text-sm">
                   No wallets detected. <br />
@@ -174,11 +177,6 @@ export default function WalletConnectButton() {
                       name: 'Lace',
                       url: 'https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk',
                       color: '#6B56F5',
-                    },
-                    {
-                      name: 'Yoroi',
-                      url: 'https://chromewebstore.google.com/detail/yoroi/ffnbelfdoeiohenkjibnmadjiehjhajb',
-                      color: '#F97316',
                     },
                   ].map((w) => (
                     <a
@@ -215,12 +213,12 @@ export default function WalletConnectButton() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
-                {wallets.map((w) => (
+              <div className="flex flex-wrap gap-4 justify-center">
+                {filteredWallets.map((w) => (
                   <button
                     key={w.id}
                     onClick={() => handleConnect(w.id)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl border border-white/10 hover:border-[#00e5ff]/50 hover:bg-white/5 transition-all duration-200 group"
+                    className="flex flex-col items-center justify-center w-24 h-24 gap-2 p-3 rounded-xl border border-white/10 hover:border-[#00e5ff]/50 hover:bg-white/5 transition-all duration-200 group"
                   >
                     <img src={w.icon} alt={w.name} className="w-12 h-12 rounded-xl" />
                     <span className="text-white/60 group-hover:text-white text-xs text-center transition-colors">

@@ -24,37 +24,37 @@ function NavLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function ProtectedLink({ href, label, connected, message, onBlock }: {
-  href: string;
-  label: string;
-  connected: boolean;
-  message: string;
-  onBlock: (message: string) => void;
-}) {
-  const { pathname } = useRouter();
-  const isActive = pathname === href;
+// function ProtectedLink({ href, label, connected, message, onBlock }: {
+//   href: string;
+//   label: string;
+//   connected: boolean;
+//   message: string;
+//   onBlock: (message: string) => void;
+// }) {
+//   const { pathname } = useRouter();
+//   const isActive = pathname === href;
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (!connected) {
-      e.preventDefault();
-      onBlock(message);
-    }
-  };
+//   const handleClick = (e: React.MouseEvent) => {
+//     if (!connected) {
+//       e.preventDefault();
+//       onBlock(message);
+//     }
+//   };
 
-  return (
-    <Link
-      href={href}
-      onClick={handleClick}
-      className={`text-sm tracking-wide transition-colors duration-200
-        ${isActive
-          ? 'text-[#00e5ff] font-semibold'
-          : 'text-white/60 hover:text-[#00e5ff]'
-        }`}
-    >
-      {label}
-    </Link>
-  );
-}
+//   return (
+//     <Link
+//       href={href}
+//       onClick={handleClick}
+//       className={`text-sm tracking-wide transition-colors duration-200
+//         ${isActive
+//           ? 'text-[#00e5ff] font-semibold'
+//           : 'text-white/60 hover:text-[#00e5ff]'
+//         }`}
+//     >
+//       {label}
+//     </Link>
+//   );
+// }
 
 function DashboardButton({ connected, onBlock }: {
   connected: boolean;

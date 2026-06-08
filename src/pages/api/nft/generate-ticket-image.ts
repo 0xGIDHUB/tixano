@@ -4,23 +4,6 @@ import path from 'path';
 import QRCode from 'qrcode';
 import { uploadImageToIPFS } from '@/lib/ipfs/pinata';
 
-// Render text as SVG and convert to data URL
-function createTextImage(text: string, fontSize: number, color: string, width: number, height: number, bold: boolean = false): string {
-  const fontWeight = bold ? 'bold' : 'normal';
-  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width / 2}" y="${height / 2}" font-size="${fontSize}" fill="${color}" font-family="Courier New, monospace" font-weight="${fontWeight}" text-anchor="middle" dominant-baseline="middle">${escapeXml(text)}</text></svg>`;
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-}
-
-// Escape XML special characters
-function escapeXml(str: string): string {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
 export const config = {
     api: { bodyParser: { sizeLimit: '10mb' } },
 };
@@ -95,11 +78,13 @@ export default async function handler(
         ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
         ctx.fillRect(0, BANNER_H, W, 1);
 
-        // Asset name text - rendered as SVG
+        // Asset name text - direct canvas rendering
         const assetName = (req.body.assetName || `TXNT-${eventAlias}`).toUpperCase();
-        const textSvgUrl = createTextImage(assetName, 22, '#00E5FF', W, 50, true);
-        const textImage = await loadImage(textSvgUrl);
-        ctx.drawImage(textImage, 0, titleY - 5, W, 50);
+        ctx.fillStyle = '#00E5FF';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(assetName, W / 2, titleY + 30);
 
         // ─────────────────────────────────────
         // OUTER BORDER
@@ -227,6 +212,13 @@ export default async function handler(
         // BOTTOM SECTION
         // ─────────────────────────────────────
         const stripY = H - 90;
+
+        // POWERED BY CARDANO text - direct canvas rendering
+        ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);
 
         // ─────────────────────────────────────
         // CARDANO LOGO

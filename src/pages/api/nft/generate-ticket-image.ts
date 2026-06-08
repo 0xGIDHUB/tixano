@@ -5,53 +5,59 @@ import QRCode from 'qrcode';
 import { uploadImageToIPFS } from '@/lib/ipfs/pinata';
 import fs from 'fs';
 
-// Register system fonts with multiple fallback paths for cross-platform support
-let fontLoaded = false;
+// Try to load bundled fonts, but don't fail if they're not available
+let fontRegistered = false;
 
-// Try different font paths for different environments
-const fontPaths = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', // Alpine Linux / Vercel
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf', // Alternative Linux
-  '/System/Library/Fonts/Helvetica.ttc', // macOS
-  'C:\\Windows\\Fonts\\arial.ttf', // Windows
-];
+const bundledFontPaths = {
+  bold: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans-Bold.ttf'),
+  regular: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans.ttf'),
+};
 
-const regularFontPaths = [
-  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-  '/System/Library/Fonts/Helvetica.ttc',
-  'C:\\Windows\\Fonts\\arial.ttf',
-];
-
-// Register bold font
-for (const fontPath of fontPaths) {
+for (const [weight, fontPath] of Object.entries(bundledFontPaths)) {
   try {
     if (fs.existsSync(fontPath)) {
-      registerFont(fontPath, { family: 'CustomFont', weight: 'bold' });
-      fontLoaded = true;
-      console.log(`Loaded bold font from: ${fontPath}`);
-      break;
+      registerFont(fontPath, { family: 'CustomFont', weight: weight === 'bold' ? 'bold' : 'normal' });
+      fontRegistered = true;
+      console.log(`Loaded ${weight} font from: ${fontPath}`);
     }
   } catch (e) {
-    // Continue to next path
+    console.warn(`Failed to load ${weight} font from ${fontPath}`);
   }
 }
 
-// Register regular font
-for (const fontPath of regularFontPaths) {
-  try {
-    if (fs.existsSync(fontPath)) {
-      registerFont(fontPath, { family: 'CustomFont', weight: 'normal' });
-      console.log(`Loaded regular font from: ${fontPath}`);
-      break;
-    }
-  } catch (e) {
-    // Continue to next path
-  }
+if (!fontRegistered) {
+  console.warn('⚠ System fonts not available - will use SVG text rendering');
 }
 
-if (!fontLoaded) {
-  console.warn('No system fonts could be loaded - using canvas defaults');
+// Helper function to render text as SVG and convert to data URL
+function createTextImage(text: string, fontSize: number, color: string, width: number, height: number, bold: boolean = false): string {
+  const fontWeight = bold ? 'bold' : 'normal';
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <text 
+        x="${width / 2}" 
+        y="${height / 2}" 
+        font-size="${fontSize}" 
+        fill="${color}" 
+        font-family="Arial, sans-serif"
+        font-weight="${fontWeight}"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        style="word-break: break-all;"
+      >${escapeXml(text)}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+// Escape XML special characters
+function escapeXml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 export const config = {
@@ -128,11 +134,23 @@ export default async function handler(
         ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
         ctx.fillRect(0, BANNER_H, W, 1);
 
-        // Asset name text
-        ctx.fillStyle = '#00E5FF';
-        ctx.font = 'bold 22px "CustomFont"';
-        ctx.textAlign = 'center';
-        ctx.fillText((req.body.assetName || `TXNT-${eventAlias}`).toUpperCase(), W / 2, titleY + 35);
+        // Asset name text - render as SVG if fonts aren't registered
+        const assetName = (req.body.assetName || `TXNT-${eventAlias}`).toUpperCase();
+        
+        if (fontRegistered) {
+          // Use canvas text rendering if fonts are available
+          ctx.fillStyle = '#00E5FF';
+          ctx.font = 'bold 22px "CustomFont"';
+          ctx.textAlign = 'center';
+          ctx.fillText(assetName, W / 2, titleY + 35);
+        } else {
+          // Use SVG-rendered text as fallback
+          const textSvgUrl = createTextImage(assetName, 22, '#00E5FF', W, 60, true);
+          const textImage = await loadImage(textSvgUrl);
+          const textX = (W - textImage.width) / 2;
+          const textY = titleY + 20;
+          ctx.drawImage(textImage, textX, textY);
+        }
 
         // ─────────────────────────────────────
         // OUTER BORDER
@@ -261,12 +279,19 @@ export default async function handler(
         // ─────────────────────────────────────
         const stripY = H - 90;
 
-        // POWERED BY CARDANO
-        ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-        ctx.font = '18px "CustomFont"';
-        ctx.textAlign = 'left';
-
-        ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);
+        // POWERED BY CARDANO text - render as SVG if fonts aren't registered
+        if (fontRegistered) {
+          // Use canvas text rendering if fonts are available
+          ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
+          ctx.font = '18px "CustomFont"';
+          ctx.textAlign = 'left';
+          ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);
+        } else {
+          // Use SVG-rendered text as fallback
+          const textSvgUrl = createTextImage('POWERED BY CARDANO', 18, 'rgba(228, 236, 238, 0.72)', 300, 50, false);
+          const textImage = await loadImage(textSvgUrl);
+          ctx.drawImage(textImage, 34, stripY + 10);
+        }
 
         // ─────────────────────────────────────
         // CARDANO LOGO

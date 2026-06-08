@@ -80,7 +80,7 @@ export default async function handler(
 
         // Asset name text
         ctx.fillStyle = '#00E5FF';
-        ctx.font = 'bold 22px monospace';
+        ctx.font = 'bold 22px "Courier New", monospace';
         ctx.textAlign = 'center';
         ctx.fillText((req.body.assetName || `TXNT-${eventAlias}`).toUpperCase(), W / 2, titleY + 35);
 
@@ -213,7 +213,7 @@ export default async function handler(
 
         // POWERED BY CARDANO
         ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-        ctx.font = '400 18px sans-serif';
+        ctx.font = '400 18px "Arial", sans-serif';
         ctx.textAlign = 'left';
 
         ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);

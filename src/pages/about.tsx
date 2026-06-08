@@ -4,26 +4,26 @@ import { useState, useRef, useEffect } from 'react';
 
 // Custom hook for scroll animations
 function useScrollAnimation(threshold = 0.1) {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef(null);
+    const [isVisible, setIsVisible] = useState(false);
+    const ref = useRef(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsVisible(entry.isIntersecting);
-    }, { threshold });
+    useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+            setIsVisible(entry.isIntersecting);
+        }, { threshold });
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
+        if (ref.current) {
+            observer.observe(ref.current);
+        }
 
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, [threshold]);
+        return () => {
+            if (ref.current) {
+                observer.unobserve(ref.current);
+            }
+        };
+    }, [threshold]);
 
-  return [ref, isVisible] as const;
+    return [ref, isVisible] as const;
 }
 
 export default function About() {
@@ -32,6 +32,12 @@ export default function About() {
     const [whyTixanoRef, whyTixanoVisible] = useScrollAnimation(0.15);
     const [faqRef, faqVisible] = useScrollAnimation(0.15);
     const [ctaRef, ctaVisible] = useScrollAnimation(0.15);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setMounted(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <>
@@ -68,7 +74,10 @@ export default function About() {
                         <div className="flex flex-col items-center text-center max-w-7xl mx-auto">
 
                             {/* ── Text content ── */}
-                            <div className="flex flex-col">
+                            <div
+                                className={`flex flex-col transition-all ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+                                style={{ transitionDuration: '1000ms' }}
+                            >
 
 
                                 {/* Main headline */}

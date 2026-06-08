@@ -1,8 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, registerFont } from 'canvas';
 import path from 'path';
 import QRCode from 'qrcode';
 import { uploadImageToIPFS } from '@/lib/ipfs/pinata';
+
+// Register system fonts for Alpine Linux (Vercel)
+try {
+  // These are standard system fonts available in most Linux distributions
+  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', { family: 'DejaVu Sans', weight: 'bold' });
+  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', { family: 'DejaVu Sans' });
+} catch (e) {
+  // Font registration might fail in local dev, but should work on Vercel
+  console.warn('Font registration failed - using canvas defaults');
+}
 
 export const config = {
     api: { bodyParser: { sizeLimit: '10mb' } },
@@ -80,7 +90,7 @@ export default async function handler(
 
         // Asset name text
         ctx.fillStyle = '#00E5FF';
-        ctx.font = 'bold 22px "Courier New", monospace';
+        ctx.font = 'bold 22px "DejaVu Sans"';
         ctx.textAlign = 'center';
         ctx.fillText((req.body.assetName || `TXNT-${eventAlias}`).toUpperCase(), W / 2, titleY + 35);
 
@@ -213,7 +223,7 @@ export default async function handler(
 
         // POWERED BY CARDANO
         ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-        ctx.font = '400 18px "Arial", sans-serif';
+        ctx.font = '18px "DejaVu Sans"';
         ctx.textAlign = 'left';
 
         ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);

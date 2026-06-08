@@ -111,7 +111,7 @@ export async function buildMintOwnerTicketTx({
   const tokenName = stringToHex(getOwnerTokenName(eventName));
   const eventPrice = getEventPrice(eventCapacity);
 
-  const tixanoLink = process.env.NEXT_PUBLIC_APP_URL!+`/events/${eventUuid}`;
+  const tixanoLink = process.env.NEXT_PUBLIC_APP_URL!;
 
   const redeemer = mConStr0([
     adminPkh, // dosent need to be converted to hex because its already in the correct format
@@ -202,7 +202,7 @@ export async function buildMintAttendeeTicketTx({
   const assetName = getAttendeeTokenName(eventAlias, registrationNumber);
   const tokenName = stringToHex(assetName);
 
-  const tixanoLink = process.env.NEXT_PUBLIC_APP_URL!+`/events/${eventUuid}`;
+  const tixanoLink = process.env.NEXT_PUBLIC_APP_URL!;
 
   // MintAttendeeTicket is constructor index 1
   // attendee_address: VerificationKeyHash

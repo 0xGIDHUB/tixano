@@ -1,52 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
 import QRCode from 'qrcode';
 import { uploadImageToIPFS } from '@/lib/ipfs/pinata';
-import fs from 'fs';
 
-// Try to load bundled fonts, but don't fail if they're not available
-let fontRegistered = false;
-
-const bundledFontPaths = {
-  bold: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans-Bold.ttf'),
-  regular: path.join(process.cwd(), 'public', 'fonts', 'DejaVuSans.ttf'),
-};
-
-for (const [weight, fontPath] of Object.entries(bundledFontPaths)) {
-  try {
-    if (fs.existsSync(fontPath)) {
-      registerFont(fontPath, { family: 'CustomFont', weight: weight === 'bold' ? 'bold' : 'normal' });
-      fontRegistered = true;
-      console.log(`Loaded ${weight} font from: ${fontPath}`);
-    }
-  } catch (e) {
-    console.warn(`Failed to load ${weight} font from ${fontPath}`);
-  }
-}
-
-if (!fontRegistered) {
-  console.warn('⚠ System fonts not available - will use SVG text rendering');
-}
-
-// Helper function to render text as SVG and convert to data URL
+// Render text as SVG and convert to data URL
 function createTextImage(text: string, fontSize: number, color: string, width: number, height: number, bold: boolean = false): string {
   const fontWeight = bold ? 'bold' : 'normal';
-  const svg = `
-    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <text 
-        x="${width / 2}" 
-        y="${height / 2}" 
-        font-size="${fontSize}" 
-        fill="${color}" 
-        font-family="Arial, sans-serif"
-        font-weight="${fontWeight}"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        style="word-break: break-all;"
-      >${escapeXml(text)}</text>
-    </svg>
-  `;
+  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width / 2}" y="${height / 2}" font-size="${fontSize}" fill="${color}" font-family="Courier New, monospace" font-weight="${fontWeight}" text-anchor="middle" dominant-baseline="middle">${escapeXml(text)}</text></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
@@ -124,7 +85,7 @@ export default async function handler(
         ctx.restore();
 
         // ── ASSET NAME TITLE ──
-        const titleY = BANNER_H + 20;
+        const titleY = BANNER_H + 25;
 
         // Cyan label tag background
         ctx.fillStyle = '#050505';
@@ -134,23 +95,11 @@ export default async function handler(
         ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
         ctx.fillRect(0, BANNER_H, W, 1);
 
-        // Asset name text - render as SVG if fonts aren't registered
+        // Asset name text - rendered as SVG
         const assetName = (req.body.assetName || `TXNT-${eventAlias}`).toUpperCase();
-        
-        if (fontRegistered) {
-          // Use canvas text rendering if fonts are available
-          ctx.fillStyle = '#00E5FF';
-          ctx.font = 'bold 22px "CustomFont"';
-          ctx.textAlign = 'center';
-          ctx.fillText(assetName, W / 2, titleY + 35);
-        } else {
-          // Use SVG-rendered text as fallback
-          const textSvgUrl = createTextImage(assetName, 22, '#00E5FF', W, 60, true);
-          const textImage = await loadImage(textSvgUrl);
-          const textX = (W - textImage.width) / 2;
-          const textY = titleY + 20;
-          ctx.drawImage(textImage, textX, textY);
-        }
+        const textSvgUrl = createTextImage(assetName, 22, '#00E5FF', W, 50, true);
+        const textImage = await loadImage(textSvgUrl);
+        ctx.drawImage(textImage, 0, titleY - 5, W, 50);
 
         // ─────────────────────────────────────
         // OUTER BORDER
@@ -278,20 +227,6 @@ export default async function handler(
         // BOTTOM SECTION
         // ─────────────────────────────────────
         const stripY = H - 90;
-
-        // POWERED BY CARDANO text - render as SVG if fonts aren't registered
-        if (fontRegistered) {
-          // Use canvas text rendering if fonts are available
-          ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-          ctx.font = '18px "CustomFont"';
-          ctx.textAlign = 'left';
-          ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);
-        } else {
-          // Use SVG-rendered text as fallback
-          const textSvgUrl = createTextImage('POWERED BY CARDANO', 18, 'rgba(228, 236, 238, 0.72)', 300, 50, false);
-          const textImage = await loadImage(textSvgUrl);
-          ctx.drawImage(textImage, 34, stripY + 10);
-        }
 
         // ─────────────────────────────────────
         // CARDANO LOGO

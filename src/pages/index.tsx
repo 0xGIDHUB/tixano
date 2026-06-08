@@ -198,9 +198,9 @@ export default function Home() {
         <title>Tixano</title>
       </Head>
 
-      <section className={`relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden transition-opacity duration-1500 ${
+      <section className={`relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden transition-opacity ${
         canvasReady ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}>
+      }`} style={{ transitionDuration: '3000ms' }}>
         <div className="flex flex-col lg:flex-row w-full items-center gap-8 py-24 lg:py-0">
 
           {/* Left — full width on mobile, half on desktop */}

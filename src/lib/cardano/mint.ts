@@ -111,6 +111,8 @@ export async function buildMintOwnerTicketTx({
   const tokenName = stringToHex(getOwnerTokenName(eventName));
   const eventPrice = getEventPrice(eventCapacity);
 
+  const tixanoLink = process.env.NEXT_PUBLIC_TIXANO_LINK!+`/events/${eventUuid}`;
+
   const redeemer = mConStr0([
     adminPkh, // dosent need to be converted to hex because its already in the correct format
     ownerPkh,
@@ -135,7 +137,7 @@ export async function buildMintOwnerTicketTx({
           event_id: eventUuid,
           event_capacity: eventCapacity,
           platform: 'Tixano',
-          website: 'tixano link here',
+          website: splitMetadataString(tixanoLink),
         },
       },
     })
@@ -200,6 +202,8 @@ export async function buildMintAttendeeTicketTx({
   const assetName = getAttendeeTokenName(eventAlias, registrationNumber);
   const tokenName = stringToHex(assetName);
 
+  const tixanoLink = process.env.NEXT_PUBLIC_TIXANO_LINK!+`/events/${eventUuid}`;
+
   // MintAttendeeTicket is constructor index 1
   // attendee_address: VerificationKeyHash
   // event_type: ByteArray ("free" or "paid")
@@ -228,7 +232,7 @@ export async function buildMintAttendeeTicketTx({
           ticket_id: splitMetadataString(ticketUuid),
           ticket_owner: ticketOwnerName,
           platform: 'Tixano',
-          website: 'tixano link here',
+          website: splitMetadataString(tixanoLink),
         },
       },
     })

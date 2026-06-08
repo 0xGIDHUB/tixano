@@ -322,7 +322,7 @@ export default function EventDetail() {
             setRegistering(false);
             setProcessingStep(null);
 
-            showToast('Your NFT ticket has been minted successfully.', {
+            showToast('Your ticket has been minted successfully.', {
                 title: 'Registration Complete',
                 type: 'success',
                 duration: 10000,

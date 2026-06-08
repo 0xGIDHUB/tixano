@@ -198,7 +198,9 @@ export default function Home() {
         <title>Tixano</title>
       </Head>
 
-      <section className="relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden">
+      <section className={`relative min-h-screen bg-black flex items-center px-[6%] overflow-hidden transition-opacity duration-1500 ${
+        canvasReady ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}>
         <div className="flex flex-col lg:flex-row w-full items-center gap-8 py-24 lg:py-0">
 
           {/* Left — full width on mobile, half on desktop */}
@@ -254,13 +256,7 @@ export default function Home() {
           </div>
 
           {/* Right — full width on mobile (shown below text), half on desktop */}
-          <div className="w-full lg:flex-1 min-w-0 flex items-center justify-center relative">
-            {/* Skeleton loader - shows while canvas initializes */}
-            {!canvasReady && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[500px] h-[320px] sm:h-[400px] lg:h-[500px] bg-gradient-to-br from-[#00e5ff]/10 via-transparent to-transparent rounded-lg animate-pulse" />
-              </div>
-            )}
+          <div className="w-full lg:flex-1 min-w-0 flex items-center justify-center">
             <canvas
               ref={canvasRef}
               width={500}

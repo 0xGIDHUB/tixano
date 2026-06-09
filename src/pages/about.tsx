@@ -579,6 +579,10 @@ export default function About() {
                                     a: 'Once you register for an event, an NFT ticket is minted directly to your connected wallet. You\'ll also receive a confirmation email. Your ticket appears in your wallet almost instantly after the blockchain transaction confirms.',
                                 },
                                 {
+                                    q: 'Are there fees to register for events?',
+                                    a: 'Tixano currently supports free events. You will pay a small Cardano network (ADA) transaction fee when your ticket is minted — typically a fraction of a ADA. Paid event support is planned for a future release.',
+                                },
+                                {
                                     q: 'How does check-in work at the event?',
                                     a: 'Your NFT ticket contains a unique QR code tied to your wallet address. At the venue, the organizer scans it using Tixano\'s check-in interface. The system verifies ownership on the Cardano blockchain in real time and grants access instantly.',
                                 },
@@ -587,12 +591,12 @@ export default function About() {
                                     a: 'Organizers should only verify tickets directly from a Cardano wallet and should not accept screenshots. TIXANO is designed for wallet-based ticket verification, helping ensure that event access is granted only to legitimate ticket holders.',
                                 },
                                 {
-                                    q: 'Are there fees to register for events?',
-                                    a: 'Tixano currently supports free events. You will pay a small Cardano network (ADA) transaction fee when your ticket is minted — typically a fraction of a ADA. Paid event support is planned for a future release.',
+                                    q: 'Can I transfer or sell my ticket?',
+                                    a: 'Not yet. Ticket transfers and resales via the Tixano platform are planned for a future release. In the meantime, manually sending your ticket NFT to another wallet address will invalidate it — the check-in system verifies that the ticket is held by the wallet it was originally minted to, so transferring it will cause verification to fail at the door.',
                                 },
                                 {
-                                    q: 'I\'m an organizer. How do I create an event?',
-                                    a: 'Connect your wallet, navigate to "Create Events" in the navbar, and fill in your event details. Once submitted, your event goes live on the platform and attendees can begin registering immediately.',
+                                    q: 'Does Tixano support virtual events?',
+                                    a: 'Currently, Tixano is built exclusively for in-person events. Virtual event support is something we are actively exploring for a future release. For now, all events on the platform require physical attendance and QR code check-in.',
                                 },
                                 {
                                     q: 'What happens to my ticket after the event?',
@@ -660,8 +664,7 @@ export default function About() {
                         </h2>
 
                         <p className={`text-white/35 text-base leading-relaxed max-w-lg mb-12 font-light transition-all ${ctaVisible ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDuration: '1500ms', transitionDelay: '100ms' }}>
-                            Whether you&apos;re organising your next community event or looking for something to attend,
-                            Tixano is the platform where you to truly own your ticket.
+                            For the organizers building real events and attendees who want full ownership, Tixano is where it all happens.
                         </p>
 
                         {/* CTA Buttons */}

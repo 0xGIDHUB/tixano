@@ -812,7 +812,7 @@ export default function CreateEvent() {
                                     disabled={submitting || !connected}
                                     className="w-full mt-2 bg-[#00e5ff] text-black font-black uppercase tracking-[0.1em] py-4 rounded-lg text-sm hover:bg-[#33ecff] transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                                 >
-                                    {!connected ? 'Connect Wallet to Create Event' : (submitting ? submitStatus || 'Processing...' : 'Create Event')}
+                                    {!connected ? 'Connect Wallet to Proceed' : (submitting ? submitStatus || 'Processing...' : 'Create Event')}
                                 </button>
 
                                 {toast && (

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FaEnvelope, FaDiscord } from 'react-icons/fa';
+import { FaEnvelope, FaDiscord, FaGithub } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -56,6 +56,15 @@ export default function Footer() {
               className="text-white/30 hover:text-[#00e5ff] transition-colors duration-200"
             >
               <FaDiscord size={22} />
+            </a>
+            <a
+              href="https://github.com/0xGIDHUB/tixano"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="text-white/30 hover:text-[#00e5ff] transition-colors duration-200"
+            >
+              <FaGithub size={22} />
             </a>
           </div>
 

@@ -609,6 +609,7 @@ export default function CreateEvent() {
                                             type="date"
                                             name="registrationDeadline"
                                             value={form.registrationDeadline}
+                                            min={new Date().toISOString().split('T')[0]} 
                                             max={form.date} // ← cannot be after event date
                                             onChange={(e) => {
                                                 // Only allow dates up to and including the event date

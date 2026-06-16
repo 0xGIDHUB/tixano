@@ -753,12 +753,12 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Event Date</label>
-                    <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+                    <input type="date" value={form.date} min={new Date().toISOString().split('T')[0]} onChange={e => set('date', e.target.value)}
                       className={inputClass} style={{ colorScheme: 'dark' }} />
                   </div>
                   <div>
                     <label className={labelClass}>Registration Deadline</label>
-                    <input type="date" value={form.registration_deadline} onChange={e => set('registration_deadline', e.target.value)}
+                    <input type="date" min={new Date().toISOString().split('T')[0]} value={form.registration_deadline} onChange={e => set('registration_deadline', e.target.value)}
                       className={inputClass} style={{ colorScheme: 'dark' }} />
                   </div>
                 </div>

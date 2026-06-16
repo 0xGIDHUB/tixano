@@ -572,7 +572,7 @@ export default function About() {
                                 },
                                 {
                                     q: 'What wallets are supported?',
-                                    a: 'Any CIP-30 compatible Cardano wallet works with Tixano. We recommend Vespr, Eternl, or Lace. If your wallet supports CIP-30, it will connect seamlessly.',
+                                    a: 'Any CIP-30 compatible Cardano wallet works with Tixano. We recommend Vespr or Eternl. If your wallet supports CIP-30, it will connect seamlessly.',
                                 },
                                 {
                                     q: 'How do I receive my ticket after registering?',
@@ -588,7 +588,7 @@ export default function About() {
                                 },
                                 {
                                     q: 'Can someone else use my ticket if they screenshot the QR code?',
-                                    a: 'Organizers should only verify tickets directly from a Cardano wallet and should not accept screenshots. TIXANO is designed for wallet-based ticket verification, helping ensure that event access is granted only to legitimate ticket holders.',
+                                    a: 'Each ticket contains a unique QR code that can only be used once. When a ticket is scanned at check-in, Tixano verifies its validity and immediately marks it as used, preventing it from being reused. To protect access to your event, attendees should treat their ticket QR code like any other event ticket and avoid sharing screenshots or copies with others before check-in.',
                                 },
                                 {
                                     q: 'Can I transfer or sell my ticket?',

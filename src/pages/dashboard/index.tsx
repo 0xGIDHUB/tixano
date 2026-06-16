@@ -20,6 +20,7 @@ interface Ticket {
   owner_name: string;
   tx_hash: string | null;
   policy_id: string | null;
+  event_title?: string;
 }
 
 interface DashboardEvent {
@@ -98,7 +99,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
     async function fetchEvents() {
       setLoading(true);
       try {
-        const addr = await (wallet as unknown as {getChangeAddressBech32(): Promise<string>}).getChangeAddressBech32();
+        const addr = await (wallet as unknown as { getChangeAddressBech32(): Promise<string> }).getChangeAddressBech32();
         const { data } = await supabase
           .from('events')
           .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time, registration_deadline, address, organizer_name, organizer_link')
@@ -108,28 +109,29 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
           // Sort events: closest upcoming first, then least close upcoming, then past events at the end
           const now = new Date();
           const todayStart = new Date(now.toDateString());
-          
+
           const sortedEvents = [...data].sort((a, b) => {
             const dateA = a.date ? new Date(a.date) : null;
             const dateB = b.date ? new Date(b.date) : null;
-            
+
             const isAPast = dateA && dateA < todayStart;
             const isBPast = dateB && dateB < todayStart;
-            
+
             // If one is past and the other isn't, past goes to the end
             if (isAPast !== isBPast) {
               return isAPast ? 1 : -1;
             }
-            
+
             // Both are past or both are upcoming - sort by date (closest first)
             if (!dateA || !dateB) return 0;
             return dateA.getTime() - dateB.getTime();
           });
-          
+
           setEvents(sortedEvents);
         }
       } catch (e: unknown) {
-      console.error(e); }
+        console.error(e);
+      }
       setLoading(false);
     }
     fetchEvents();
@@ -317,7 +319,7 @@ function EventCard({ event, active, formatDate }: {
 }) {
   // Track image loading state
   const [imageLoading, setImageLoading] = useState(true);
-  
+
   // Calculate event status flags
   const isFull = event.capacity && event.total_registrations >= event.capacity;
   const isPast = event.date && new Date(event.date) < new Date(new Date().toDateString());
@@ -337,9 +339,9 @@ function EventCard({ event, active, formatDate }: {
                 <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
               )}
               {/* Image element */}
-              <img 
-                src={event.cover_image_url} 
-                alt={event.title} 
+              <img
+                src={event.cover_image_url}
+                alt={event.title}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageLoading(false)}
@@ -492,7 +494,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
       }, 800);
 
     } catch (e: unknown) {
-      const error = e as {message?: string};
+      const error = e as { message?: string };
       setErrorMsg(error?.message?.includes('cancelled') || error?.message?.includes('user') ? 'Transaction cancelled.' : (error?.message || 'Transaction failed.'));
       setStatus('error');
     }
@@ -695,7 +697,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
       onEventUpdated?.(data);
       handleClose();
     } catch (e: unknown) {
-      const error = e as {message?: string};
+      const error = e as { message?: string };
       setError(error.message || 'Failed to save changes.');
     }
     setSaving(false);
@@ -1264,7 +1266,23 @@ export default function Dashboard() {
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          setTickets(data);
+          // Fetch titles for all unique event IDs in one query
+          const uniqueEventIds = [...new Set(data.map(t => t.event_id))];
+          const { data: eventsData } = await supabase
+            .from('events')
+            .select('id, title')
+            .in('id', uniqueEventIds);
+
+          const eventTitleMap: Record<string, string> = {};
+          eventsData?.forEach(e => { eventTitleMap[e.id] = e.title; });
+
+          // Merge event titles onto tickets
+          const ticketsWithTitles = data.map(t => ({
+            ...t,
+            event_title: eventTitleMap[t.event_id] || 'Unknown Event',
+          }));
+
+          setTickets(ticketsWithTitles);
           setCurrentPage(1);
         }
       } catch (err) {
@@ -1284,7 +1302,9 @@ export default function Dashboard() {
   // Apply status and search filters to tickets
   const filteredTickets = tickets.filter(ticket => {
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
-    const matchesSearch = searchQuery === '' || ticket.asset_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = searchQuery === '' ||
+      ticket.asset_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ticket.event_title || '').toLowerCase().includes(searchQuery.toLowerCase()); // ← add this
     return matchesStatus && matchesSearch;
   });
 
@@ -1442,6 +1462,11 @@ export default function Dashboard() {
                               />
                             </svg>
                             <div className="relative flex flex-col items-center justify-center text-center" style={{ height: '72px' }}>
+                              {/* Event name — new */}
+                              <p className="text-white/30 text-[9px] uppercase tracking-widest w-full px-4 truncate mb-0.5">
+                                {ticket.event_title}
+                              </p>
+                              {/* Asset name */}
                               <p className="text-white/60 text-[11px] font-mono w-full px-4 truncate group-hover:text-[#00e5ff] transition-colors duration-300">
                                 {ticket.asset_name}
                               </p>

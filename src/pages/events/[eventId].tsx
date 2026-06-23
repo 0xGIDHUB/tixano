@@ -6,7 +6,7 @@ import { useWallet } from '@meshsdk/react';
 import { supabase } from '@/lib/supabase/client';
 import Toast from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
-import { buildMintAttendeeTicketTx, getAttendeeTokenName} from '@/lib/cardano/mint';
+import { buildMintAttendeeTicketTx, getAttendeeTokenName } from '@/lib/cardano/mint';
 import { waitForConfirmation } from '@/lib/cardano/verify';
 import { generateTicketImage } from '@/lib/ipfs/generateTicketImage';
 import { OrbitProgress } from "react-loading-indicators";
@@ -186,6 +186,11 @@ export default function EventDetail() {
     });
     const [processingStep, setProcessingStep] = useState<'signing' | 'confirming' | 'saving' | null>(null);
 
+    const [registrationSuccess, setRegistrationSuccess] = useState<{
+        assetName: string;
+        txHash: string;
+    } | null>(null);
+
     useEffect(() => {
         if (!eventId) return;
         async function fetchEvent() {
@@ -321,15 +326,9 @@ export default function EventDetail() {
             // ── 5. Done ───────────────────────────────────────────────────────────
             setRegistering(false);
             setProcessingStep(null);
+            setRegistrationSuccess({ assetName, txHash }); // ← show success screen
 
-            showToast('Your ticket has been minted successfully.', {
-                title: 'Registration Complete',
-                type: 'success',
-                duration: 10000,
-                txHash,
-            });
-
-            // Refresh event data to update registration count.
+            // Refresh registration count
             const { data } = await supabase
                 .from('events')
                 .select('total_registrations')
@@ -372,7 +371,7 @@ export default function EventDetail() {
 
             setRegistering(false);
             setProcessingStep(null);
-            const errorMessage = (err as {message?: string}).message || 'Registration failed. Please try again.';
+            const errorMessage = (err as { message?: string }).message || 'Registration failed. Please try again.';
             showToast(errorMessage, {
                 title: 'Error',
                 type: 'error',
@@ -751,40 +750,113 @@ export default function EventDetail() {
                 </div>
             </div >
 
-            {/* Processing Modal */}
-            {registering && (
+            {/* Processing / Success Modal */}
+            {(registering || registrationSuccess) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4">
                     <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl text-center">
 
-                        {/* Loading Animation */}
-                        <div className="flex items-center justify-center mb-8 mt-8 w-full">
-                            <OrbitProgress variant="disc" dense color="#00e5ff" size="small" text="" textColor="" />
-                        </div>
+                        {/* ── SUCCESS STATE ── */}
+                        {registrationSuccess ? (
+                            <>
+                                {/* Icon */}
+                                <div className="flex items-center justify-center mb-6 mt-2">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-full bg-[#00ff88]/10 border border-[#00ff88]/25 flex items-center justify-center">
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                                <path d="M5 12l5 5L20 7" stroke="#00ff88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                        <div className="absolute inset-0 rounded-full border border-[#00ff88]/15 animate-ping" style={{ animationDuration: '2s' }} />
+                                    </div>
+                                </div>
 
-                        <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
-                            {processingStep === 'signing' && 'Building Transaction'}
-                            {processingStep === 'confirming' && 'Confirming Transaction'}
-                            {processingStep === 'saving' && 'Almost Done'}
-                            {!processingStep && 'Processing...'}
-                        </h2>
-
-                        <p className="text-white/40 text-sm leading-relaxed mb-6">
-                            {processingStep === 'signing' &&
-                                'Sign the transaction in your wallet to mint your NFT ticket.'}
-                            {processingStep === 'confirming' &&
-                                'Your transaction has been submitted. Waiting for confirmation on the Cardano blockchain. This may take 30–60 seconds.'}
-                            {processingStep === 'saving' &&
-                                'Transaction confirmed. Saving your ticket details...'}
-                            {!processingStep && 'Please wait...'}
-                        </p>
-
-                        {processingStep === 'confirming' && (
-                            <div className="flex items-center gap-2 bg-[#ffaa00]/10 border border-[#ffaa00]/20 rounded-lg px-4 py-3">
-                                <span className="text-[#ffaa00] text-lg flex-shrink-0">⚠</span>
-                                <p className="text-[#ffaa00]/80 text-xs text-left leading-relaxed">
-                                    Do not close this tab or navigate away during confirmation.
+                                <h2 className="text-white font-black uppercase tracking-tight text-xl mb-2">
+                                    Ticket Minted!
+                                </h2>
+                                <p className="text-white/40 text-sm leading-relaxed mb-2">
+                                    Your NFT ticket for <span className="text-white/70 font-semibold">{event?.title}</span> has been successfully minted to your wallet.
                                 </p>
-                            </div>
+                                <p className="text-[#00e5ff] text-[11px] font-mono mb-6 truncate px-4">
+                                    {registrationSuccess.assetName}
+                                </p>
+
+                                {/* Next step guidance */}
+                                <div className="flex items-start gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-3 mb-6 text-left">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
+                                        <circle cx="12" cy="12" r="10" stroke="#00e5ff" strokeWidth="1.5" strokeOpacity="0.5" />
+                                        <path d="M12 8v4M12 16h.01" stroke="#00e5ff" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.8" />
+                                    </svg>
+                                    <p className="text-white/35 text-xs leading-relaxed">
+                                        Your ticket is now in your Cardano wallet. You can view it in your <span className="text-white/60 font-semibold">Tixano Dashboard</span> or directly inside your <span className="text-white/60 font-semibold">connected wallet app</span>. Bring your QR code to the event for check-in.
+                                    </p>
+                                </div>
+
+                                {/* CTAs */}
+                                <div className="flex flex-col gap-3">
+                                    <Link
+                                        href="/dashboard?tab=tickets"
+                                        onClick={() => setRegistrationSuccess(null)}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#00e5ff] text-black text-sm font-black uppercase tracking-widest hover:bg-[#33ecff] transition-all duration-200"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                            <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                                            <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                                            <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                                            <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                                        </svg>
+                                        View in Dashboard
+                                    </Link>
+
+                                    <a
+                                        href={`${process.env.NEXT_PUBLIC_CARDANOSCAN_URL}/transaction/${registrationSuccess.txHash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-white/10 text-white/50 text-sm font-bold uppercase tracking-widest hover:border-white/25 hover:text-white/70 transition-all duration-200"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                            <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        View Transaction
+                                    </a>
+
+                                    <button
+                                        onClick={() => setRegistrationSuccess(null)}
+                                        className="text-white/20 hover:text-white/40 text-xs transition-colors duration-200 py-1"
+                                    >
+                                        Stay on this page
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            /* ── IN-PROGRESS STATE — unchanged ── */
+                            <>
+                                <div className="flex items-center justify-center mb-8 mt-8 w-full">
+                                    <OrbitProgress variant="disc" dense color="#00e5ff" size="small" text="" textColor="" />
+                                </div>
+
+                                <h2 className="text-white font-black uppercase tracking-tight text-lg mb-2">
+                                    {processingStep === 'signing' && 'Building Transaction'}
+                                    {processingStep === 'confirming' && 'Confirming Transaction'}
+                                    {processingStep === 'saving' && 'Almost Done'}
+                                    {!processingStep && 'Processing...'}
+                                </h2>
+
+                                <p className="text-white/40 text-sm leading-relaxed mb-6">
+                                    {processingStep === 'signing' && 'Sign the transaction in your wallet to mint your NFT ticket.'}
+                                    {processingStep === 'confirming' && 'Your transaction has been submitted. Waiting for confirmation on the Cardano blockchain. This may take 30–60 seconds.'}
+                                    {processingStep === 'saving' && 'Transaction confirmed. Saving your ticket details...'}
+                                    {!processingStep && 'Please wait...'}
+                                </p>
+
+                                {processingStep === 'confirming' && (
+                                    <div className="flex items-center gap-2 bg-[#ffaa00]/10 border border-[#ffaa00]/20 rounded-lg px-4 py-3">
+                                        <span className="text-[#ffaa00] text-lg flex-shrink-0">⚠</span>
+                                        <p className="text-[#ffaa00]/80 text-xs text-left leading-relaxed">
+                                            Do not close this tab or navigate away during confirmation.
+                                        </p>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                     </div>

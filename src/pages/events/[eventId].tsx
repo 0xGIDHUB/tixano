@@ -758,6 +758,19 @@ export default function EventDetail() {
                         {/* ── SUCCESS STATE ── */}
                         {registrationSuccess ? (
                             <>
+                                {/* Header row with close button */}
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1" />
+                                    <button
+                                        onClick={() => setRegistrationSuccess(null)}
+                                        className="w-7 h-7 rounded-lg border border-white/10 flex items-center justify-center text-white/30 hover:text-white hover:border-white/25 transition-all duration-200 flex-shrink-0"
+                                    >
+                                        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+
                                 {/* Icon */}
                                 <div className="flex items-center justify-center mb-6 mt-2">
                                     <div className="relative">
@@ -779,17 +792,6 @@ export default function EventDetail() {
                                 <p className="text-[#00e5ff] text-[11px] font-mono mb-6 truncate px-4">
                                     {registrationSuccess.assetName}
                                 </p>
-
-                                {/* Next step guidance */}
-                                <div className="flex items-start gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-3 mb-6 text-left">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
-                                        <circle cx="12" cy="12" r="10" stroke="#00e5ff" strokeWidth="1.5" strokeOpacity="0.5" />
-                                        <path d="M12 8v4M12 16h.01" stroke="#00e5ff" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.8" />
-                                    </svg>
-                                    <p className="text-white/35 text-xs leading-relaxed">
-                                        Your ticket is now in your Cardano wallet. You can view it in your <span className="text-white/60 font-semibold">Tixano Dashboard</span> or directly inside your <span className="text-white/60 font-semibold">connected wallet app</span>. Bring your QR code to the event for check-in.
-                                    </p>
-                                </div>
 
                                 {/* CTAs */}
                                 <div className="flex flex-col gap-3">
@@ -819,12 +821,6 @@ export default function EventDetail() {
                                         View Transaction
                                     </a>
 
-                                    <button
-                                        onClick={() => setRegistrationSuccess(null)}
-                                        className="text-white/20 hover:text-white/40 text-xs transition-colors duration-200 py-1"
-                                    >
-                                        Stay on this page
-                                    </button>
                                 </div>
                             </>
                         ) : (

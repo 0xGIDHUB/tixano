@@ -1240,6 +1240,14 @@ export default function Dashboard() {
   // Carousel state to persist position when navigating back
   const [carouselActiveIndex, setCarouselActiveIndex] = useState(0);
 
+  // Read tab from URL query on mount
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.tab === 'tickets') {
+      setActiveTab('tickets');
+    }
+  }, [router.isReady, router.query.tab]);
+
   // Initialize dashboard with a delay for smoother UX
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 800);

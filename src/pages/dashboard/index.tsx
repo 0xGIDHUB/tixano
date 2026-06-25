@@ -433,7 +433,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
 
-  const EDIT_FEE_LOVELACE = "5000000"; // 5 ADA
+  const EDIT_FEE_LOVELACE = "5000000";
   const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS!;
 
   useEffect(() => {
@@ -475,7 +475,6 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
       setStatus('confirming');
       const txHash = await wallet.submitTx(signedTx);
 
-      // Call backend to confirm transaction and validate payment
       const confirmRes = await fetch('/api/transactions/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -495,7 +494,11 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
 
     } catch (e: unknown) {
       const error = e as { message?: string };
-      setErrorMsg(error?.message?.includes('cancelled') || error?.message?.includes('user') ? 'Transaction cancelled.' : (error?.message || 'Transaction failed.'));
+      setErrorMsg(
+        error?.message?.includes('cancelled') || error?.message?.includes('user')
+          ? 'Transaction cancelled.'
+          : (error?.message || 'Transaction failed.')
+      );
       setStatus('error');
     }
   }
@@ -512,17 +515,19 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
       >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-white/5">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Pay to unlock editing</p>
+              <h3 className="text-white font-black uppercase tracking-tight text-base leading-none">Edit Event</h3>
+            </div>
             <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center flex-shrink-0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="#00e5ff" fillOpacity="0.7" />
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#00e5ff" strokeOpacity="0.75" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#00e5ff" strokeOpacity="0.75" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <div>
-              <p className="text-[#00e5ff]/60 text-[9px] uppercase tracking-widest">Edit Event</p>
-              <h3 className="text-white font-black uppercase tracking-tight text-sm">Confirm Payment</h3>
-            </div>
           </div>
+
         </div>
 
         {/* Body */}
@@ -531,7 +536,7 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
           {/* Fee breakdown */}
           <div className="bg-black/40 border border-white/10 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-              <span className="text-white/40 text-xs">Edit event fee</span>
+              <span className="text-white/40 text-xs">Unlock fee</span>
               <span className="text-white font-black text-sm">₳ 5.00</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
@@ -540,14 +545,10 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
             </div>
           </div>
 
-          {/* Info note */}
-          <div className="flex items-start gap-2.5 bg-white/3 border border-white/20 rounded-xl px-3 py-2.5">
-            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5">
-              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-              <path d="M12 8v4M12 16h.01" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            <p className="text-white/30 text-[10px] leading-relaxed">
-              A small fee applies to edit event information. <br />This fee is non-refundable.
+          {/* Non-refundable warning */}
+          <div className="flex items-start gap-2.5 bg-[#ffaa00]/5 border border-[#ffaa00]/15 rounded-xl px-3 py-2.5">
+            <p className="text-[#ffaa00]/60 text-[11px] leading-relaxed text-center">
+              This fee is <span className="font-bold text-[#ffaa00]/80">non-refundable</span>. You will be prompted to sign the transaction in your wallet before the editor opens.
             </p>
           </div>
 
@@ -571,7 +572,6 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
               <p className="text-[#00ff88] text-[10px]">Payment confirmed — opening editor...</p>
             </div>
           )}
-
         </div>
 
         {/* Footer */}
@@ -588,28 +588,10 @@ function EditPaymentGate({ event, onPaid, onCancel }: {
             disabled={isProcessing || status === 'done'}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00e5ff] hover:bg-[#33ecff] text-black text-xs font-black uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            {status === 'idle' || status === 'error' ? (
-              <>
-                Pay
-              </>
-            ) : status === 'signing' ? (
-              <>
-                <div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />
-                Sign in wallet...
-              </>
-            ) : status === 'confirming' ? (
-              <>
-                <div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />
-                Confirming...
-              </>
-            ) : (
-              <>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                  <path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Confirmed
-              </>
-            )}
+            {status === 'idle' || status === 'error' ? 'Pay & Edit' :
+              status === 'signing' ? (<><div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />Sign in wallet...</>) :
+                status === 'confirming' ? (<><div className="w-3 h-3 rounded-full border-2 border-black/20 border-t-black animate-spin" />Confirming...</>) :
+                  (<><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>Confirmed</>)}
           </button>
         </div>
       </div>

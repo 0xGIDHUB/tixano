@@ -177,7 +177,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
   // Format date string to readable format
   function formatDate(d: string | null) {
     if (!d) return 'TBA';
-    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   // Show loading indicator while fetching events
@@ -322,7 +322,7 @@ function EventCard({ event, active, formatDate }: {
 
   // Calculate event status flags
   const isFull = event.capacity && event.total_registrations >= event.capacity;
-  const isPast = event.date && new Date(event.date) < new Date(new Date().toDateString());
+  const isPast = event.date && new Date(event.date + 'T00:00:00') < new Date(new Date().toDateString());
 
   return (
     <div className={`w-full rounded-2xl border bg-[#0a0a0a] transition-all duration-500 ${active
@@ -865,7 +865,7 @@ function EventManagerDashboard({ event, onBack, onEventUpdated, name }: { event:
 
   const formatDate = (d: string | null) => {
     if (!d) return 'TBA';
-    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   // Live countdown timer
@@ -1663,7 +1663,7 @@ export default function Dashboard() {
                 <div className="bg-black/40 rounded-xl px-3 py-2">
                   <p className="text-white/25 text-[10px] uppercase tracking-widest mb-0.5">Registered</p>
                   <p className="text-white/60 text-[11px]">
-                    {new Date(selectedTicket.created_at).toLocaleDateString('en-GB', {
+                    {new Date(selectedTicket.created_at + 'T00:00:00').toLocaleDateString('en-GB', {
                       day: 'numeric', month: 'short', year: 'numeric'
                     })}
                   </p>

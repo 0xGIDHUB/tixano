@@ -415,7 +415,7 @@ export default function CreateEvent() {
             }, 8000);
 
         } catch (err: unknown) {
-            const error = err as {message?: string};
+            const error = err as { message?: string };
             console.error(err);
             setSubmitting(false);
             setProcessingStep(null);
@@ -587,12 +587,13 @@ export default function CreateEvent() {
                                             type="date"
                                             name="date"
                                             value={form.date}
-                                            min={new Date().toISOString().split('T')[0]}  // ← add this
+                                            min={new Date().toISOString().split('T')[0]} 
                                             onChange={(e) => {
                                                 const selectedDate = e.target.value;
-                                                const eventDate = new Date(selectedDate);
+                                                const [y, m, d] = selectedDate.split('-').map(Number);
+                                                const eventDate = new Date(y, m - 1, d); // local time constructor, no UTC shift
                                                 eventDate.setDate(eventDate.getDate() - 1);
-                                                const deadlineValue = eventDate.toISOString().split('T')[0];
+                                                const deadlineValue = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
                                                 setForm(f => ({
                                                     ...f,
                                                     date: selectedDate,
@@ -609,7 +610,7 @@ export default function CreateEvent() {
                                             type="date"
                                             name="registrationDeadline"
                                             value={form.registrationDeadline}
-                                            min={new Date().toISOString().split('T')[0]} 
+                                            min={new Date().toISOString().split('T')[0]}
                                             max={form.date} // ← cannot be after event date
                                             onChange={(e) => {
                                                 // Only allow dates up to and including the event date
@@ -1094,7 +1095,7 @@ export default function CreateEvent() {
 
             {/* Preview Ticket Modal */}
             {showPreviewModal && previewImageDataUrl && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-8"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {

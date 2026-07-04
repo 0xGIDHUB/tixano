@@ -7,6 +7,8 @@ export async function generateTicketImage({
   eventAlias,
   eventDate,
   assetName,
+  ownerName,
+  avatarDataUrl,
 }: {
   bannerImageUrl: string | null;
   ticketId: string;
@@ -14,12 +16,15 @@ export async function generateTicketImage({
   eventAlias: string;
   eventDate: string | null;
   assetName: string;
+  ownerName?: string;
+  avatarDataUrl?: string | null;
 }): Promise<string> {
-  // Generate ticket image in the browser using canvas
   return generateTicketImageBrowser({
     bannerImageUrl,
     ticketId,
     eventAlias,
     assetName,
+    ownerName,
+    avatarDataUrl,
   });
 }

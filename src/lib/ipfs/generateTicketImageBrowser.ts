@@ -10,16 +10,32 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function drawPersonIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number) {
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  // Head
+  ctx.beginPath();
+  ctx.arc(cx, cy - radius * 0.16, radius * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  // Body/shoulders arc
+  ctx.beginPath();
+  ctx.arc(cx, cy + radius * 0.50, radius * 0.48, Math.PI, 0, false);
+  ctx.fill();
+}
+
 export async function generateTicketImageBrowser({
   bannerImageUrl,
   ticketId,
   eventAlias,
   assetName,
+  ownerName,
+  avatarDataUrl,
 }: {
   bannerImageUrl: string | null;
   ticketId: string;
   eventAlias: string;
   assetName: string;
+  ownerName?: string;
+  avatarDataUrl?: string | null;
 }): Promise<string> {
   const W = 800;
   const H = 1000;
@@ -111,7 +127,7 @@ export async function generateTicketImageBrowser({
   // ─────────────────────────────────────
   // QR SECTION
   // ─────────────────────────────────────
-  const QR_SIZE = 430;
+  const QR_SIZE = 400;
 
   const qrX = (W - QR_SIZE) / 2;
   const qrY = dividerY + 70;
@@ -206,31 +222,71 @@ export async function generateTicketImageBrowser({
   }
 
   // ─────────────────────────────────────
-  // BOTTOM SECTION
+  // BOTTOM SECTION — avatar + name + cardano logo
   // ─────────────────────────────────────
-  const stripY = H - 90;
+  const stripY = H - 120;
+  const avatarDiameter = 88;
+  const avatarRadius = avatarDiameter / 2;
+  const avatarCX = 40 + avatarRadius;
+  const avatarCY = stripY + 45;
+  const cardanoSize = 56;
 
-  // POWERED BY CARDANO text - direct canvas rendering
-  ctx.fillStyle = 'rgba(228, 236, 238, 0.72)';
-  ctx.font = '16px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('POWERED BY CARDANO', 34, stripY + 34);
+  // Draw avatar circle (clipped)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarRadius, 0, Math.PI * 2);
+  ctx.clip();
 
-  // ─────────────────────────────────────
-  // CARDANO LOGO
-  // ─────────────────────────────────────
+  // Dark fill background
+  ctx.fillStyle = '#0a0f1a';
+  ctx.fillRect(avatarCX - avatarRadius, avatarCY - avatarRadius, avatarDiameter, avatarDiameter);
+
+  if (avatarDataUrl) {
+    try {
+      const avatarImg = await loadImage(avatarDataUrl);
+      // Cover-fit: crop to square from center
+      const imgAspect = avatarImg.width / avatarImg.height;
+      let sx = 0, sy = 0, sw = avatarImg.width, sh = avatarImg.height;
+      if (imgAspect > 1) { sw = avatarImg.height; sx = (avatarImg.width - sw) / 2; }
+      else { sh = avatarImg.width; sy = (avatarImg.height - sh) / 2; }
+      ctx.drawImage(avatarImg, sx, sy, sw, sh, avatarCX - avatarRadius, avatarCY - avatarRadius, avatarDiameter, avatarDiameter);
+    } catch {
+      drawPersonIcon(ctx, avatarCX, avatarCY, avatarRadius);
+    }
+  } else {
+    drawPersonIcon(ctx, avatarCX, avatarCY, avatarRadius);
+  }
+  ctx.restore();
+
+  // Cyan border ring
+  ctx.strokeStyle = '#00E5FF';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Owner name
+  if (ownerName) {
+    const nameX = avatarCX + avatarRadius + 16;
+    const maxNameWidth = W - nameX - (cardanoSize + 34 + 24);
+    ctx.fillStyle = 'rgba(228, 236, 238, 0.85)';
+    ctx.font = '30px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    // Truncate if needed
+    let displayName = ownerName;
+    while (ctx.measureText(displayName).width > maxNameWidth && displayName.length > 3) {
+      displayName = displayName.slice(0, -1);
+    }
+    if (displayName !== ownerName) displayName += '...';
+    ctx.fillText(displayName, nameX, avatarCY);
+  }
+
+  // Cardano logo — bottom right
   try {
     const cardanoLogo = await loadImage('/Cardano Logo.png');
-    const cardanoSize = 56;
     ctx.globalAlpha = 0.85;
-    ctx.drawImage(
-      cardanoLogo,
-      W - cardanoSize - 34,
-      stripY,
-      cardanoSize,
-      cardanoSize
-    );
+    ctx.drawImage(cardanoLogo, W - cardanoSize - 34, stripY + (90 - cardanoSize) / 2, cardanoSize, cardanoSize);
     ctx.globalAlpha = 1;
   } catch (e) {
     console.warn('Failed to load Cardano logo:', e);

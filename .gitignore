@@ -55,5 +55,7 @@ docs/
 gmail-credentials.json
 generate-gmail-token.js
 
+# docs
 DEPLOYMENT.md
 FRONTEND_CANVAS_MIGRATION.md
+MAINNET_MIGRATION.md

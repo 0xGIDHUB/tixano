@@ -184,6 +184,8 @@ export default function EventDetail() {
     const [regForm, setRegForm] = useState<RegistrationForm>({
         fullName: '', email: '', phone: '', expectation: '',
     });
+    const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+    const [avatarFileName, setAvatarFileName] = useState<string | null>(null);
     const [processingStep, setProcessingStep] = useState<'signing' | 'confirming' | 'saving' | null>(null);
 
     const [registrationSuccess, setRegistrationSuccess] = useState<{
@@ -215,6 +217,19 @@ export default function EventDetail() {
 
     function handleRegisterClick() {
         setShowRegModal(true);
+    }
+
+    function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            showToast('Image must be under 2MB.', { title: 'File Too Large', type: 'warning', duration: 4000 });
+            return;
+        }
+        setAvatarFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = () => setAvatarDataUrl(reader.result as string);
+        reader.readAsDataURL(file);
     }
 
     async function handleRegistrationSubmit() {
@@ -273,6 +288,8 @@ export default function EventDetail() {
                 eventAlias: event.event_alias,
                 eventDate: event.date,
                 assetName: getAttendeeTokenName(event.event_alias, registrationNumber),
+                ownerName: regForm.fullName,
+                avatarDataUrl: avatarDataUrl || null,
             });
 
             // ── 2. Mint NFT ───────────────────────────────────────────────────────
@@ -911,6 +928,56 @@ export default function EventDetail() {
                                     />
                                 </div>
 
+                                {/* Avatar upload */}
+                                <div>
+                                    <label className={labelClass}>
+                                        Avatar / pfp <span className="text-white/20 normal-case tracking-normal font-normal">— optional, appears on your ticket</span>
+                                    </label>
+
+                                    <div className="flex flex-col items-center gap-2">
+                                        <label className="relative group cursor-pointer">
+                                            {/* Clickable circle */}
+                                            <div className={`w-20 h-20 rounded-full overflow-hidden border-2 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${avatarDataUrl
+                                                ? 'border-[#00e5ff]/60 group-hover:border-[#00e5ff]'
+                                                : 'border-[#00e5ff]/25 bg-[#0a0f1a] group-hover:border-[#00e5ff]/60 group-hover:bg-[#0a1520]'
+                                                }`}>
+                                                {avatarDataUrl ? (
+                                                    <>
+                                                        <img src={avatarDataUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                        {/* Hover overlay on existing image */}
+                                                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                                <path d="M12 16V8M12 8l-3 3M12 8l3 3" stroke="#00b8cc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M3 16v1a4 4 0 004 4h10a4 4 0 004-4v-1" stroke="#00b8cc" strokeWidth="1.5" strokeLinecap="round" />
+                                                            </svg>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center gap-1.5">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                            <path d="M12 16V8M12 8l-3 3M12 8l3 3" stroke="#00b8cc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            <path d="M3 16v1a4 4 0 004 4h10a4 4 0 004-4v-1" stroke="#00b8cc" strokeWidth="1.5" strokeLinecap="round" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                                        </label>
+
+                                        {/* Label below */}
+                                        {avatarDataUrl ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => { setAvatarDataUrl(null); setAvatarFileName(null); }}
+                                                className="text-white/25 text-[10px] hover:text-red-400/60 transition-colors duration-200"
+                                            >
+                                                Remove photo
+                                            </button>
+                                        ) : (
+                                            <p className="text-white/25 text-[10px]">Click to upload</p>
+                                        )}
+                                    </div>
+                                </div>
                                 <div>
                                     <label className={labelClass}>What do you hope to get from this event?</label>
                                     <textarea

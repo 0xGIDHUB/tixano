@@ -6,14 +6,13 @@ import { useToast } from '@/hooks/useToast';
 import { createPortal } from 'react-dom';
 
 export default function WalletConnectButton() {
-  const { connect, disconnect, connected, connecting } = useWallet();
-  const address = useAddress();
+  const { connect, disconnect, connected, connecting, wallet } = useWallet();
+  const [walletAddress, setWalletAddress] = useState<string>('');
   const wallets = useWalletList();
   const [showModal, setShowModal] = useState(false);
   const [showDisconnect, setShowDisconnect] = useState(false);
   const { toast, showToast, closeToast } = useToast();
 
-  // Filter out Brave wallet as it's not a Cardano wallet
   const filteredWallets = wallets.filter((w) => w.id !== 'brave');
 
   const truncateAddress = (addr: string | undefined) => {
@@ -21,11 +20,22 @@ export default function WalletConnectButton() {
     return `${addr.slice(0, 8)}...${addr.slice(-4)}`;
   };
 
+  // Fetch address directly from wallet whenever connected state changes
+  useEffect(() => {
+    if (connected && wallet) {
+      wallet.getChangeAddressBech32()
+        .then(addr => setWalletAddress(addr))
+        .catch(() => setWalletAddress(''));
+    } else {
+      setWalletAddress('');
+    }
+  }, [connected, wallet]);
+
   const handleCopyAddress = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (address) {
+    if (walletAddress) {
       try {
-        await navigator.clipboard.writeText(address);
+        await navigator.clipboard.writeText(walletAddress);
         showToast('Address copied to clipboard!', { title: 'Success', type: 'success', duration: 3000 });
       } catch {
         showToast('Failed to copy address', { title: 'Error', type: 'error', duration: 3000 });
@@ -50,20 +60,24 @@ export default function WalletConnectButton() {
     try {
       await connect(walletId);
 
-      const cardano = (window as unknown as Record<string, unknown>).cardano as Record<string, {enable?: () => Promise<Record<string, unknown>>}> | undefined;
-      const wallet = cardano ? cardano[walletId] : undefined;
-      const walletApi = wallet && wallet.enable ? await wallet.enable() : undefined;
-      const networkId = await (walletApi as {getNetworkId: () => Promise<number>}).getNetworkId();
+      // Give MeshJS a moment to propagate the wallet API
+      await new Promise(r => setTimeout(r, 300));
 
-      if (networkId !== CARDANO_NETWORK_ID) {
-        disconnect();
-        setShowModal(false);
-        localStorage.removeItem('tixano_wallet');
-        showToast(
-          `Please switch your wallet to Cardano ${CARDANO_NETWORK.charAt(0).toUpperCase() + CARDANO_NETWORK.slice(1)} and try again.`,
-          { title: 'Wrong Network', type: 'error', duration: 6000 }
-        );
-        return;
+      const cardano = (window as unknown as Record<string, unknown>).cardano as Record<string, { enable?: () => Promise<{ getNetworkId: () => Promise<number> }> }> | undefined;
+      const rawWallet = cardano?.[walletId];
+      if (rawWallet?.enable) {
+        const walletApi = await rawWallet.enable();
+        const networkId = await walletApi.getNetworkId();
+        if (networkId !== CARDANO_NETWORK_ID) {
+          disconnect();
+          setShowModal(false);
+          localStorage.removeItem('tixano_wallet');
+          showToast(
+            `Please switch your wallet to Cardano ${CARDANO_NETWORK.charAt(0).toUpperCase() + CARDANO_NETWORK.slice(1)} and try again.`,
+            { title: 'Wrong Network', type: 'error', duration: 6000 }
+          );
+          return;
+        }
       }
 
       localStorage.setItem('tixano_wallet', walletId);
@@ -94,7 +108,7 @@ export default function WalletConnectButton() {
                 className="text-sm text-white/80 font-mono cursor-pointer hover:text-[#00e5ff] transition-colors"
                 title="Click to copy"
               >
-                {truncateAddress(address)}
+                {walletAddress ? truncateAddress(walletAddress) : '...'}
               </button>
             </div>
             <button

@@ -106,7 +106,7 @@ export default function Navbar() {
   const network = process.env.NEXT_PUBLIC_CARDANO_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
   const switchUrl = network === 'mainnet'
     ? 'https://tixanotestnet.vercel.app'
-    : 'https://tixano.vercel.app';
+    : 'https://tixanomainnet.vercel.app';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);

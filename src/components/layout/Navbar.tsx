@@ -102,6 +102,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { connected } = useWallet();
   const { toast, showToast, closeToast } = useToast();
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   const network = process.env.NEXT_PUBLIC_CARDANO_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
   const switchUrl = network === 'mainnet'
@@ -130,37 +131,42 @@ export default function Navbar() {
         <nav className="max-w-full mx-auto flex items-center justify-between relative">
 
           {/* Logo + network badge */}
-          <div className="flex items-end gap-2.5">
-            <Link href="/">
-              <img
-                src="/Tixano Logo.png"
-                alt="TIXANO"
-                className="h-7 w-auto object-contain"
-              />
-            </Link>
+<div className="flex items-end gap-2.5">
+  <Link href="/">
+    <img
+      src="/Tixano Logo.png"
+      alt="TIXANO"
+      className="h-7 w-auto object-contain"
+      onLoad={() => setLogoLoaded(true)}
+    />
+  </Link>
 
-            {/* Network subtext + switch */}
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[9px] font-bold uppercase tracking-widest ${network === 'mainnet' ? 'text-[#00ff88]/60' : 'text-[#ffaa00]/60'
-                }`}>
-                {network}
-              </span>
+  {/* Network subtext + switch — only renders once logo is ready */}
+  {logoLoaded && (
+    <div className="flex items-center gap-1.5">
+      <span className={`text-[9px] font-bold uppercase tracking-widest ${
+        network === 'mainnet' ? 'text-[#00ff88]/60' : 'text-[#ffaa00]/60'
+      }`}>
+        {network}
+      </span>
 
-              <a
-                href={switchUrl}
-                title={`Switch to ${network === 'mainnet' ? 'testnet' : 'mainnet'}`}
-                className={`flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 hover:scale-110 ${network === 'mainnet'
-                  ? 'border-[#00ff88]/20 text-[#00ff88]/40 hover:border-[#00ff88]/50 hover:text-[#00ff88]/80'
-                  : 'border-[#ffaa00]/20 text-[#ffaa00]/40 hover:border-[#ffaa00]/50 hover:text-[#ffaa00]/80'
-                  }`}
-              >
-                <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                  <path d="M1 4h9.5M10.5 4l-2-2M10.5 4l-2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M15 12H5.5M5.5 12l2-2M5.5 12l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-          </div>
+      
+        href={switchUrl}
+        title={`Switch to ${network === 'mainnet' ? 'testnet' : 'mainnet'}`}
+        className={`flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 hover:scale-110 ${
+          network === 'mainnet'
+            ? 'border-[#00ff88]/20 text-[#00ff88]/40 hover:border-[#00ff88]/50 hover:text-[#00ff88]/80'
+            : 'border-[#ffaa00]/20 text-[#ffaa00]/40 hover:border-[#ffaa00]/50 hover:text-[#ffaa00]/80'
+        }`}
+      <a>
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+          <path d="M1 4h9.5M10.5 4l-2-2M10.5 4l-2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M15 12H5.5M5.5 12l2-2M5.5 12l2 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </a>
+    </div>
+  )}
+</div>
 
           {/* Center Nav Links */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">

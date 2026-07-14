@@ -101,7 +101,7 @@ function EventsCarousel({ wallet, connected, onEventSelect, activeIndex, setActi
       try {
         const addr = await (wallet as unknown as { getChangeAddressBech32(): Promise<string> }).getChangeAddressBech32();
         const { data } = await supabase
-          .from('events')
+          .from('events_testnet')
           .select('id, title, event_alias, date, city, country, capacity, total_registrations, pricing, ticket_price, cover_image_url, policy_id, description, start_time, end_time, registration_deadline, address, organizer_name, organizer_link')
           .eq('organizer_wallet', addr)
           .order('created_at', { ascending: false });
@@ -657,7 +657,7 @@ function EditEventModal({ event, onClose, onSaved, onEventUpdated }: {
     setError(null);
     try {
       const { data, error: err } = await supabase
-        .from('events')
+        .from('events_testnet')
         .update({
           description: form.description || event.description || null,
           date: form.date || event.date || null,
@@ -1250,7 +1250,7 @@ export default function Dashboard() {
       try {
         const walletAddress = await wallet.getChangeAddressBech32();
         const { data, error } = await supabase
-          .from('tickets')
+          .from('tickets_testnet')
           .select('id, asset_name, event_id, status, created_at, nft_image_url, owner_name, tx_hash, policy_id')
           .eq('owner_wallet', walletAddress)
           .order('created_at', { ascending: false });
@@ -1259,7 +1259,7 @@ export default function Dashboard() {
           // Fetch titles for all unique event IDs in one query
           const uniqueEventIds = [...new Set(data.map(t => t.event_id))];
           const { data: eventsData } = await supabase
-            .from('events')
+            .from('events_testnet')
             .select('id, title')
             .in('id', uniqueEventIds);
 
@@ -1412,7 +1412,7 @@ export default function Dashboard() {
                             onClick={async () => {
                               setImageLoaded(false);
                               const { data: eventData } = await supabase
-                                .from('events')
+                                .from('events_testnet')
                                 .select('title')
                                 .eq('id', ticket.event_id)
                                 .single();

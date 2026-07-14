@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { data, error } = await supabaseAdmin
-    .from('events')
+    .from('events_testnet')
     .insert({
       id: eventId,              // ← use the frontend UUID as primary key
       organizer_wallet: walletAddress,

@@ -197,7 +197,7 @@ export default function EventDetail() {
         if (!eventId) return;
         async function fetchEvent() {
             const { data, error } = await supabase
-                .from('events')
+                .from('events_testnet')
                 .select('*')
                 .eq('id', eventId)
                 .single();
@@ -347,7 +347,7 @@ export default function EventDetail() {
 
             // Refresh registration count
             const { data } = await supabase
-                .from('events')
+                .from('events_testnet')
                 .select('total_registrations')
                 .eq('id', event.id)
                 .single();

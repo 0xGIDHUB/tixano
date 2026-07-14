@@ -125,7 +125,7 @@ export default function CheckInPage() {
             }
 
             const { data: eventOwner, error } = await supabase
-                .from('events')
+                .from('events_testnet')
                 .select('organizer_wallet')
                 .eq('id', eventId)
                 .single();
@@ -160,7 +160,7 @@ export default function CheckInPage() {
         if (!eventId || typeof eventId !== 'string') return;
 
         const { data: ticketsRes } = await supabase
-            .from('tickets')
+            .from('tickets_testnet')
             .select('id, asset_name, owner_name, used_at')
             .eq('event_id', eventId as string)
             .eq('status', 'used')
@@ -176,7 +176,7 @@ export default function CheckInPage() {
 
         async function fetchData() {
             const { data: eventRes } = await supabase
-                .from('events')
+                .from('events_testnet')
                 .select('id, title, date, total_registrations, capacity')
                 .eq('id', eventId as string)
                 .single();

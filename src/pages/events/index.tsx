@@ -115,14 +115,14 @@ export default function ExploreEvents() {
 
       const [spotlightRes, eventsRes] = await Promise.all([
         supabase
-          .from('events')
+          .from('events_testnet')
           .select('id, title, description, date, start_time, city, country, pricing, ticket_price, capacity, total_registrations, cover_image_url, banner_image_url')
           .not('date', 'is', null)
           .gte('date', today)
           .order('date', { ascending: true })
           .limit(8),
         supabase
-          .from('events')
+          .from('events_testnet')
           .select('id, title, description, date, start_time, city, country, pricing, ticket_price, capacity, total_registrations, cover_image_url')
           .not('date', 'is', null)
           .gte('date', today)
@@ -150,7 +150,7 @@ export default function ExploreEvents() {
     const to = from + PAGE_SIZE - 1;
 
     const { data } = await supabase
-      .from('events')
+      .from('events_testnet')
       .select('id, title, description, date, start_time, city, country, pricing, ticket_price, capacity, total_registrations, cover_image_url')
       .not('date', 'is', null)
       .gte('date', today)

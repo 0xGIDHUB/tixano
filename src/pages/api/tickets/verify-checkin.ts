@@ -45,7 +45,7 @@ export default async function handler(
     // Step 1: Verify ticket exists and matches the event
     // ─────────────────────────────────────────────────────────
     const { data: ticket, error: ticketError } = await supabaseAdmin
-      .from('tickets')
+      .from('tickets_testnet')
       .select('id, event_id, policy_id, asset_name, owner_wallet, owner_name, owner_email, owner_phone, tx_hash, status, used_at')
       .eq('id', ticketId)
       .single();
@@ -150,7 +150,7 @@ export default async function handler(
     // ─────────────────────────────────────────────────────────
     const now = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
-      .from('tickets')
+      .from('tickets_testnet')
       .update({
         status: 'used',
         used_at: now,

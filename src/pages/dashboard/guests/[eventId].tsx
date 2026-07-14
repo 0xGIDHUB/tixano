@@ -72,7 +72,7 @@ export default function GuestsPage() {
     async function fetchEvent() {
       setEventLoading(true);
       const { data } = await supabase
-        .from('events')
+        .from('events_testnet')
         .select('id, title, date, total_registrations, capacity')
         .eq('id', eventId)
         .single();
@@ -83,7 +83,7 @@ export default function GuestsPage() {
     async function fetchGuests() {
       setLoading(true);
       const { data } = await supabase
-        .from('tickets')
+        .from('tickets_testnet')
         .select('id, asset_name, owner_name, owner_email, owner_phone, owner_expectation, owner_wallet, status, created_at, used_at, tx_hash')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });

@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Insert ticket
   const { data: ticket, error: ticketError } = await supabaseAdmin
-    .from('tickets')
+    .from('tickets_testnet')
     .insert({
       id: ticketId,
       event_id: eventId,
